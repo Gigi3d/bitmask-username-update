@@ -2,37 +2,63 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { auth } from '@/lib/instantdb';
 
 export default function AdminLogin() {
   const router = useRouter();
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('');
+  const [magicCode, setMagicCode] = useState('');
+  const [codeSent, setCodeSent] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSendCode = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
 
     try {
-      // Mock authentication - in real app, this would call an API
-      // For now, accept any credentials (mock auth)
-      // You can add hardcoded check: username === 'admin' && password === 'admin'
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Mock: accept any non-empty credentials
-      if (username.trim() && password.trim()) {
-        // Store auth state (in real app, use proper session management)
-        localStorage.setItem('adminAuthenticated', 'true');
-        router.push('/admin/dashboard');
-      } else {
-        setError('Please enter both username and password');
+      if (!email.trim()) {
+        setError('Please enter your email address');
+        setIsLoading(false);
+        return;
       }
-    } catch (err) {
-      setError('Login failed. Please try again.');
+
+      // Send magic code to email
+      await auth.sendMagicCode({ email: email.trim() });
+      setCodeSent(true);
+      setError('');
+    } catch (err: any) {
+      console.error('Error sending magic code:', err);
+      setError(err?.message || 'Failed to send magic code. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleVerifyCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setIsLoading(true);
+
+    try {
+      if (!magicCode.trim()) {
+        setError('Please enter the magic code');
+        setIsLoading(false);
+        return;
+      }
+
+      // Verify magic code and sign in
+      await auth.signInWithMagicCode({ 
+        email: email.trim(), 
+        code: magicCode.trim() 
+      });
+      
+      // Redirect on success
+      router.push('/admin/dashboard');
+    } catch (err: any) {
+      console.error('Login error:', err);
+      setError(err?.message || 'Invalid magic code. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -46,52 +72,92 @@ export default function AdminLogin() {
           
           <div className="w-full h-1 bg-accent mb-8"></div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label htmlFor="username" className="block text-sm font-semibold mb-2">
-                Username
-              </label>
-              <input
-                type="text"
-                id="username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-accent"
-                placeholder="Enter username"
-                required
-                autoFocus
-              />
-            </div>
-
-            <div>
-              <label htmlFor="password" className="block text-sm font-semibold mb-2">
-                Password
-              </label>
-              <input
-                type="password"
-                id="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-accent"
-                placeholder="Enter password"
-                required
-              />
-            </div>
-
-            {error && (
-              <div className="bg-red-900/30 border border-red-700 rounded-lg p-3 text-red-400 text-sm">
-                {error}
+          {!codeSent ? (
+            <form onSubmit={handleSendCode} className="space-y-6">
+              <div>
+                <label htmlFor="email" className="block text-sm font-semibold mb-2">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  id="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-accent"
+                  placeholder="Enter your email address"
+                  required
+                  autoFocus
+                  disabled={isLoading}
+                />
               </div>
-            )}
 
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full bg-accent text-black font-bold py-3 px-6 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoading ? 'Logging in...' : 'Login'}
-            </button>
-          </form>
+              {error && (
+                <div className="bg-red-900/30 border border-red-700 rounded-lg p-3 text-red-400 text-sm">
+                  {error}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full bg-accent text-black font-bold py-3 px-6 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoading ? 'Sending code...' : 'Send Magic Code'}
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={handleVerifyCode} className="space-y-6">
+              <div className="bg-blue-900/30 border border-blue-700 rounded-lg p-3 text-blue-400 text-sm mb-4">
+                A magic code has been sent to <strong>{email}</strong>. Please check your email and enter the code below.
+              </div>
+
+              <div>
+                <label htmlFor="magicCode" className="block text-sm font-semibold mb-2">
+                  Magic Code
+                </label>
+                <input
+                  type="text"
+                  id="magicCode"
+                  value={magicCode}
+                  onChange={(e) => setMagicCode(e.target.value)}
+                  className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-accent text-center text-2xl tracking-widest"
+                  placeholder="Enter code"
+                  required
+                  autoFocus
+                  disabled={isLoading}
+                  maxLength={6}
+                />
+              </div>
+
+              {error && (
+                <div className="bg-red-900/30 border border-red-700 rounded-lg p-3 text-red-400 text-sm">
+                  {error}
+                </div>
+              )}
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCodeSent(false);
+                    setMagicCode('');
+                    setError('');
+                  }}
+                  disabled={isLoading}
+                  className="flex-1 bg-gray-800 text-white font-semibold py-3 px-6 rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Back
+                </button>
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="flex-1 bg-accent text-black font-bold py-3 px-6 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isLoading ? 'Verifying...' : 'Verify Code'}
+                </button>
+              </div>
+            </form>
+          )}
         </div>
       </div>
     </div>

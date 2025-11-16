@@ -2,8 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { parseCSV } from '@/lib/utils';
 import { CSVRow } from '@/types';
 import { getCSVData, setCSVData } from '@/lib/storage';
+import { requireAdminAuth } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
+  // Verify admin authentication
+  const authCheck = await requireAdminAuth(request);
+  if (authCheck.error) {
+    return authCheck.response;
+  }
+
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File;
@@ -42,7 +49,7 @@ export async function POST(request: NextRequest) {
       csvData.set(key, row);
     });
 
-    setCSVData(csvData);
+    await setCSVData(csvData);
 
     const response: { message: string; rowCount: number; duplicates?: number } = {
       message: 'CSV uploaded successfully',
@@ -57,8 +64,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(response);
   } catch (error) {
     console.error('Error uploading CSV:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to upload CSV';
     return NextResponse.json(
-      { message: 'Failed to upload CSV' },
+      { 
+        message: 'Failed to upload CSV',
+        error: process.env.NODE_ENV === 'development' ? errorMessage : undefined
+      },
       { status: 500 }
     );
   }

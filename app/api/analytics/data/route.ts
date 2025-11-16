@@ -5,7 +5,7 @@ import { formatDate, getWeekStart } from '@/lib/utils';
 
 export async function GET() {
   try {
-    const updates = getUserUpdates();
+    const updates = await getUserUpdates();
 
     // Calculate total updates
     const totalUpdates = updates.length;
@@ -51,8 +51,12 @@ export async function GET() {
     return NextResponse.json(analyticsData);
   } catch (error) {
     console.error('Error fetching analytics:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to fetch analytics';
     return NextResponse.json(
-      { message: 'Failed to fetch analytics' },
+      { 
+        message: 'Failed to fetch analytics',
+        error: process.env.NODE_ENV === 'development' ? errorMessage : undefined
+      },
       { status: 500 }
     );
   }

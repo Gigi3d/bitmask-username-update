@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     const normalizedAccount = telegramAccount.toLowerCase().replace('@', '');
     
     // Get CSV data to validate against
-    const csvData = getCSVData();
+    const csvData = await getCSVData();
     const csvRow = csvData.get(normalizedAccount);
 
     if (!csvRow) {
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check for duplicate updates
-    const existingUpdates = getUserUpdates();
+    const existingUpdates = await getUserUpdates();
     const duplicate = existingUpdates.find(
       u => u.telegramAccount.toLowerCase().replace('@', '') === normalizedAccount &&
            u.newUsername === newUsername
@@ -66,9 +66,8 @@ export async function POST(request: NextRequest) {
       submittedAt: new Date().toISOString(),
     };
 
-    // Store in memory
-    // In production, save to database
-    addUserUpdate(updateRecord);
+    // Store in InstantDB
+    await addUserUpdate(updateRecord);
 
     return NextResponse.json({
       message: 'Username updated successfully',
@@ -76,8 +75,12 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error updating username:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to update username';
     return NextResponse.json(
-      { message: 'Failed to update username' },
+      { 
+        message: 'Failed to update username',
+        error: process.env.NODE_ENV === 'development' ? errorMessage : undefined
+      },
       { status: 500 }
     );
   }

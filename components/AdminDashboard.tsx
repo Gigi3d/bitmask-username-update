@@ -2,24 +2,45 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { db, auth } from '@/lib/instantdb';
 import CSVUpload from '@/components/CSVUpload';
 import Analytics from '@/components/Analytics';
 
 export default function AdminDashboard() {
   const router = useRouter();
+  const { user, isLoading } = db.useAuth();
 
   useEffect(() => {
-    // Check if admin is authenticated
-    const isAuthenticated = localStorage.getItem('adminAuthenticated');
-    if (!isAuthenticated) {
+    // Redirect to login if not authenticated (after loading)
+    if (!isLoading && !user) {
       router.push('/admin/login');
     }
-  }, [router]);
+  }, [user, isLoading, router]);
 
-  const handleLogout = () => {
-    localStorage.removeItem('adminAuthenticated');
-    router.push('/admin/login');
+  const handleLogout = async () => {
+    try {
+      await auth.signOut();
+      router.push('/admin/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Still redirect even if logout fails
+      router.push('/admin/login');
+    }
   };
+
+  // Show loading state while checking authentication
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-white text-xl">Loading...</div>
+      </div>
+    );
+  }
+
+  // Don't render dashboard if not authenticated (will redirect)
+  if (!user) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-black px-4 py-8">

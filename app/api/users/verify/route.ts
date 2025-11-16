@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get CSV data
-    const csvData = getCSVData();
+    const csvData = await getCSVData();
     
     // Normalize telegram account (remove @, lowercase)
     const normalizedAccount = telegramAccount.toLowerCase().replace('@', '');
@@ -37,8 +37,13 @@ export async function POST(request: NextRequest) {
     }
   } catch (error) {
     console.error('Error verifying user:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to verify user';
     return NextResponse.json(
-      { message: 'Failed to verify user', valid: false },
+      { 
+        message: 'Failed to verify user', 
+        valid: false,
+        error: process.env.NODE_ENV === 'development' ? errorMessage : undefined
+      },
       { status: 500 }
     );
   }
