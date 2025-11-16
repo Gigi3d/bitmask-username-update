@@ -20,6 +20,8 @@ INSTANT_ADMIN_TOKEN=your-admin-token-here
 
 ## Database Schema
 
+**⚠️ IMPORTANT:** Before using the application, you must configure the schema in your InstantDB dashboard. See **[INSTANTDB_SCHEMA_SETUP.md](./INSTANTDB_SCHEMA_SETUP.md)** for detailed step-by-step instructions.
+
 The application uses the following InstantDB schema:
 
 ### Entities

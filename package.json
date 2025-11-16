@@ -8,11 +8,14 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "add-root-admin": "dotenv -e .env.local -- tsx scripts/add-root-admin.ts"
+    "add-root-admin": "dotenv -e .env.local -- tsx scripts/add-root-admin.ts",
+    "setup-schema": "export $(cat .env.local | xargs) && npx tsx scripts/check-and-fix-schema.ts",
+    "check-schema": "export $(cat .env.local | xargs) && npx tsx scripts/check-and-fix-schema.ts"
   },
   "dependencies": {
     "@instantdb/admin": "^0.22.51",
     "@instantdb/react": "^0.22.51",
+    "cross-spawn": "^7.0.6",
     "dotenv": "^17.2.3",
     "next": "16.0.3",
     "react": "19.2.0",

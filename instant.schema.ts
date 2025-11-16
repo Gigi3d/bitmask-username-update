@@ -1,0 +1,59 @@
+// Docs: https://www.instantdb.com/docs/modeling-data
+
+import { i } from "@instantdb/react";
+
+const _schema = i.schema({
+  entities: {
+    $files: i.entity({
+      path: i.string().unique().indexed(),
+      url: i.string(),
+    }),
+    $users: i.entity({
+      email: i.string().unique().indexed().optional(),
+      imageURL: i.string().optional(),
+      type: i.string().optional(),
+    }),
+    // Application entities
+    admin_users: i.entity({
+      email: i.string(),
+      role: i.string(),
+      createdAt: i.number(),
+    }),
+    csv_records: i.entity({
+      oldUsername: i.string(),
+      telegramAccount: i.string(),
+      newUsername: i.string(),
+      createdAt: i.number(),
+    }),
+    user_updates: i.entity({
+      oldUsername: i.string(),
+      telegramAccount: i.string(),
+      newUsername: i.string(),
+      submittedAt: i.number(),
+    }),
+  },
+  links: {
+    $usersLinkedPrimaryUser: {
+      forward: {
+        on: "$users",
+        has: "one",
+        label: "linkedPrimaryUser",
+        onDelete: "cascade",
+      },
+      reverse: {
+        on: "$users",
+        has: "many",
+        label: "linkedGuestUsers",
+      },
+    },
+  },
+  rooms: {},
+});
+
+// This helps Typescript display nicer intellisense
+type _AppSchema = typeof _schema;
+interface AppSchema extends _AppSchema {}
+const schema: AppSchema = _schema;
+
+export type { AppSchema };
+export default schema;

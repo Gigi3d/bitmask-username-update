@@ -9,11 +9,22 @@
 
 import { createAdminUser } from '../lib/storage';
 
-const ROOT_ADMIN_EMAIL = 'gideon@diba.io';
-
 async function main() {
   try {
-    console.log(`\n🔧 Adding root admin: ${ROOT_ADMIN_EMAIL}...\n`);
+    // Get email from command line argument or environment variable
+    const adminEmail = process.argv[2] || process.env.ADMIN_EMAIL;
+    
+    if (!adminEmail) {
+      console.error(`❌ Error: Admin email is required.`);
+      console.error(`\n📋 Usage:`);
+      console.error(`   npm run add-root-admin -- <email>`);
+      console.error(`   or set ADMIN_EMAIL environment variable`);
+      console.error(`\n💡 Example:`);
+      console.error(`   npm run add-root-admin -- admin@example.com\n`);
+      process.exit(1);
+    }
+    
+    console.log(`\n🔧 Adding root admin: ${adminEmail}...\n`);
     
     // Check if admin token is set
     if (!process.env.INSTANT_ADMIN_TOKEN) {
@@ -24,16 +35,16 @@ async function main() {
       console.error(`2. Add it to your .env.local file:`);
       console.error(`   INSTANT_ADMIN_TOKEN=your-admin-token-here`);
       console.error(`\n💡 Alternative: You can also use the API route:`);
-      console.error(`   POST /api/admin/create with body: { "email": "${ROOT_ADMIN_EMAIL}", "role": "superadmin" }`);
+      console.error(`   POST /api/admin/create with body: { "email": "<email>", "role": "superadmin" }`);
       console.error(`\n📝 Note: The first user to log in via /admin/login will automatically become an admin.`);
       console.error(`   However, to set a specific user as superadmin with privileges to add other admins,`);
       console.error(`   you need to use this script or the API route with an admin token.\n`);
       process.exit(1);
     }
     
-    await createAdminUser(ROOT_ADMIN_EMAIL, 'superadmin', false);
+    await createAdminUser(adminEmail, 'superadmin', false);
     
-    console.log(`✅ Successfully added ${ROOT_ADMIN_EMAIL} as a superadmin!`);
+    console.log(`✅ Successfully added ${adminEmail} as a superadmin!`);
     console.log(`\n🎉 The user now has privileges to:`);
     console.log(`   - Access the admin dashboard`);
     console.log(`   - Upload CSV files`);
@@ -43,7 +54,7 @@ async function main() {
     if (error instanceof Error) {
       if (error.message.includes('already exists')) {
         console.log(`ℹ️  ${error.message}`);
-        console.log(`The admin user ${ROOT_ADMIN_EMAIL} is already in the database.`);
+        console.log(`The admin user is already in the database.`);
         console.log(`No action needed.\n`);
       } else {
         console.error(`❌ Error: ${error.message}`);
