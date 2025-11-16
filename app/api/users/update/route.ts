@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { UserUpdateData } from '@/types';
-import { addUserUpdate } from '@/lib/storage';
+import { addUserUpdate, getUserUpdates, getCSVData } from '@/lib/storage';
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,12 +14,56 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Normalize telegram account for lookup
+    const normalizedAccount = telegramAccount.toLowerCase().replace('@', '');
+    
+    // Get CSV data to validate against
+    const csvData = getCSVData();
+    const csvRow = csvData.get(normalizedAccount);
+
+    if (!csvRow) {
+      return NextResponse.json(
+        { message: 'Telegram account not found in campaign records' },
+        { status: 400 }
+      );
+    }
+
+    // Validate old username matches CSV data
+    if (csvRow.oldUsername !== oldUsername) {
+      return NextResponse.json(
+        { message: 'Old username does not match records for this Telegram account' },
+        { status: 400 }
+      );
+    }
+
+    // Validate new username matches CSV data
+    if (csvRow.newUsername !== newUsername) {
+      return NextResponse.json(
+        { message: 'New username does not match expected value from records' },
+        { status: 400 }
+      );
+    }
+
+    // Check for duplicate updates
+    const existingUpdates = getUserUpdates();
+    const duplicate = existingUpdates.find(
+      u => u.telegramAccount.toLowerCase().replace('@', '') === normalizedAccount &&
+           u.newUsername === newUsername
+    );
+
+    if (duplicate) {
+      return NextResponse.json(
+        { message: 'This update has already been submitted' },
+        { status: 409 }
+      );
+    }
+
     // Create update record
     const updateRecord: UserUpdateData = {
       oldUsername,
       telegramAccount,
       newUsername,
-      submittedAt: new Date(),
+      submittedAt: new Date().toISOString(),
     };
 
     // Store in memory

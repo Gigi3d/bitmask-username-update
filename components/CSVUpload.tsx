@@ -1,8 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { parseCSV } from '@/lib/utils';
-import { CSVRow } from '@/types';
 
 export default function CSVUpload() {
   const [file, setFile] = useState<File | null>(null);
@@ -10,6 +8,7 @@ export default function CSVUpload() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [rowCount, setRowCount] = useState<number | null>(null);
+  const [warning, setWarning] = useState('');
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -51,6 +50,14 @@ export default function CSVUpload() {
 
       setSuccess(true);
       setRowCount(data.rowCount || null);
+      
+      // Check if message contains warning about duplicates
+      if (data.message && data.message.includes('Warning:')) {
+        setWarning(data.message);
+      } else {
+        setWarning('');
+      }
+      
       setFile(null);
       
       // Reset file input
@@ -104,6 +111,12 @@ export default function CSVUpload() {
         {success && (
           <div className="bg-green-900/30 border border-green-700 rounded-lg p-3 text-green-400 text-sm">
             CSV uploaded successfully! {rowCount !== null && `${rowCount} rows processed.`}
+          </div>
+        )}
+
+        {warning && (
+          <div className="bg-yellow-900/30 border border-yellow-700 rounded-lg p-3 text-yellow-400 text-sm">
+            {warning}
           </div>
         )}
 

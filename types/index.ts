@@ -8,7 +8,7 @@ export interface UserUpdateData {
   oldUsername: string;
   telegramAccount: string;
   newUsername: string;
-  submittedAt: Date;
+  submittedAt: string; // ISO string for proper JSON serialization
 }
 
 export interface AnalyticsData {

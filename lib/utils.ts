@@ -1,15 +1,55 @@
 import { CSVRow } from '@/types';
 
 /**
+ * Parse a single CSV line handling quoted fields and escaped quotes
+ */
+function parseCSVLine(line: string): string[] {
+  const values: string[] = [];
+  let current = '';
+  let inQuotes = false;
+  
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    const nextChar = line[i + 1];
+    
+    if (char === '"') {
+      if (inQuotes && nextChar === '"') {
+        // Escaped quote
+        current += '"';
+        i++; // Skip next quote
+      } else {
+        // Toggle quote state
+        inQuotes = !inQuotes;
+      }
+    } else if (char === ',' && !inQuotes) {
+      // End of field
+      values.push(current.trim());
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+  
+  // Add last field
+  values.push(current.trim());
+  
+  return values;
+}
+
+/**
  * Parse CSV file content into array of CSVRow objects
+ * Handles quoted fields, escaped quotes, and different line endings
  */
 export function parseCSV(csvContent: string): CSVRow[] {
-  const lines = csvContent.trim().split('\n');
+  // Handle different line endings (\r\n, \n, \r)
+  const lines = csvContent.trim().split(/\r?\n|\r/).filter(line => line.trim());
+  
   if (lines.length < 2) {
     throw new Error('CSV must have at least a header row and one data row');
   }
 
-  const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+  // Parse header row
+  const headers = parseCSVLine(lines[0]).map(h => h.trim().toLowerCase().replace(/^"|"$/g, ''));
   
   // Find column indices
   const oldUsernameIdx = headers.findIndex(h => 
@@ -28,13 +68,25 @@ export function parseCSV(csvContent: string): CSVRow[] {
 
   const rows: CSVRow[] = [];
   for (let i = 1; i < lines.length; i++) {
-    const values = lines[i].split(',').map(v => v.trim());
-    if (values.length >= 3) {
-      rows.push({
-        oldUsername: values[oldUsernameIdx],
-        telegramAccount: values[telegramIdx],
-        newUsername: values[newUsernameIdx],
-      });
+    const line = lines[i].trim();
+    // Skip empty lines
+    if (!line) continue;
+    
+    const values = parseCSVLine(line).map(v => v.replace(/^"|"$/g, '')); // Remove surrounding quotes
+    
+    if (values.length > Math.max(oldUsernameIdx, telegramIdx, newUsernameIdx)) {
+      const oldUsername = values[oldUsernameIdx]?.trim() || '';
+      const telegramAccount = values[telegramIdx]?.trim() || '';
+      const newUsername = values[newUsernameIdx]?.trim() || '';
+      
+      // Only add row if all required fields are present
+      if (oldUsername && telegramAccount && newUsername) {
+        rows.push({
+          oldUsername,
+          telegramAccount,
+          newUsername,
+        });
+      }
     }
   }
 
@@ -60,16 +112,19 @@ export function validateTelegramHandle(handle: string): boolean {
 
 /**
  * Format date for analytics display
+ * Accepts both Date objects and ISO string dates
  */
-export function formatDate(date: Date): string {
-  return date.toISOString().split('T')[0];
+export function formatDate(date: Date | string): string {
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  return dateObj.toISOString().split('T')[0];
 }
 
 /**
  * Get start of week for a given date
+ * Accepts both Date objects and ISO string dates
  */
-export function getWeekStart(date: Date): string {
-  const d = new Date(date);
+export function getWeekStart(date: Date | string): string {
+  const d = typeof date === 'string' ? new Date(date) : new Date(date);
   const day = d.getDay();
   const diff = d.getDate() - day;
   const weekStart = new Date(d.setDate(diff));

@@ -32,16 +32,29 @@ export async function POST(request: NextRequest) {
     // Store in memory (keyed by telegram account for easy lookup)
     // In production, store in database
     const csvData = new Map<string, CSVRow>();
+    const duplicates: string[] = [];
+    
     rows.forEach(row => {
       const key = row.telegramAccount.toLowerCase().replace('@', '');
+      if (csvData.has(key)) {
+        duplicates.push(key);
+      }
       csvData.set(key, row);
     });
+
     setCSVData(csvData);
 
-    return NextResponse.json({
+    const response: { message: string; rowCount: number; duplicates?: number } = {
       message: 'CSV uploaded successfully',
       rowCount: rows.length,
-    });
+    };
+
+    if (duplicates.length > 0) {
+      response.message += `. Warning: ${duplicates.length} duplicate Telegram account(s) found. Only the last entry for each account was kept.`;
+      // Note: In production, you might want to return the duplicates list
+    }
+
+    return NextResponse.json(response);
   } catch (error) {
     console.error('Error uploading CSV:', error);
     return NextResponse.json(

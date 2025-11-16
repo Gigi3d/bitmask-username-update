@@ -30,29 +30,35 @@ export default function UpdateFlow() {
   };
 
   const handleStep3Submit = async (newUsername: string) => {
-    setFormData(prev => ({ ...prev, newUsername }));
-    
     try {
+      // Use current formData values directly to avoid race conditions
+      const updatePayload = {
+        oldUsername: formData.oldUsername,
+        telegramAccount: formData.telegramAccount,
+        newUsername,
+      };
+
       const response = await fetch('/api/users/update', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          oldUsername: formData.oldUsername,
-          telegramAccount: formData.telegramAccount,
-          newUsername,
-        }),
+        body: JSON.stringify(updatePayload),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error('Failed to update username');
+        throw new Error(data.message || 'Failed to update username');
       }
 
+      // Update state only after successful API call
+      setFormData(prev => ({ ...prev, newUsername }));
       setCurrentStep(4); // Success screen
     } catch (error) {
       console.error('Error updating username:', error);
-      alert('Failed to update username. Please try again.');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update username. Please try again.';
+      alert(errorMessage);
     }
   };
 

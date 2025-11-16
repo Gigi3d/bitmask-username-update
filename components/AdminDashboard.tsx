@@ -2,8 +2,8 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import CSVUpload from './CSVUpload';
-import Analytics from './Analytics';
+import CSVUpload from '@/components/CSVUpload';
+import Analytics from '@/components/Analytics';
 
 export default function AdminDashboard() {
   const router = useRouter();
