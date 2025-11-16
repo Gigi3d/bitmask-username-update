@@ -7,11 +7,13 @@
     "dev:no-turbo": "NEXT_DISABLE_TURBO=1 next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "add-root-admin": "dotenv -e .env.local -- tsx scripts/add-root-admin.ts"
   },
   "dependencies": {
     "@instantdb/admin": "^0.22.51",
     "@instantdb/react": "^0.22.51",
+    "dotenv": "^17.2.3",
     "next": "16.0.3",
     "react": "19.2.0",
     "react-dom": "19.2.0",
@@ -22,9 +24,11 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv-cli": "^11.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.0.3",
     "tailwindcss": "^4",
+    "tsx": "^4.7.0",
     "typescript": "^5"
   }
 }

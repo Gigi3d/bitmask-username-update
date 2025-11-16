@@ -1,4 +1,4 @@
-import { CSVRow, UserUpdateData, CSVRecord, UserUpdate } from '@/types';
+import { CSVRow, UserUpdateData, CSVRecord, UserUpdate, AdminUserRecord } from '@/types';
 import { getAdminDb } from './instantdb';
 import { id } from '@instantdb/admin';
 
@@ -130,6 +130,81 @@ export async function addUserUpdate(update: UserUpdateData): Promise<void> {
   } catch (error) {
     console.error('Error adding user update to InstantDB:', error);
     throw new Error('Failed to save user update');
+  }
+}
+
+/**
+ * Get all admin users from InstantDB
+ */
+export async function getAdminUsers(): Promise<AdminUserRecord[]> {
+  try {
+    const db = getAdminDb();
+    const result = await db.query({ admin_users: {} });
+    
+    if (!result?.admin_users) {
+      return [];
+    }
+    
+    const admins = Array.isArray(result.admin_users) 
+      ? result.admin_users 
+      : Object.values(result.admin_users);
+    
+    return admins.map((admin) => admin as AdminUserRecord);
+  } catch (error) {
+    console.error('Error fetching admin users from InstantDB:', error);
+    throw new Error('Failed to fetch admin users');
+  }
+}
+
+/**
+ * Check if an admin user exists by email
+ */
+export async function adminUserExists(email: string): Promise<boolean> {
+  try {
+    const admins = await getAdminUsers();
+    return admins.some(admin => admin.email.toLowerCase() === email.toLowerCase());
+  } catch (error) {
+    console.error('Error checking admin user existence:', error);
+    return false;
+  }
+}
+
+/**
+ * Create an admin user in InstantDB
+ */
+export async function createAdminUser(email: string, role: 'admin' | 'superadmin' = 'admin', skipExistenceCheck: boolean = false): Promise<void> {
+  try {
+    const db = getAdminDb();
+    
+    // Check if admin already exists (skip if admin token is not available)
+    if (!skipExistenceCheck) {
+      try {
+        const exists = await adminUserExists(email);
+        if (exists) {
+          throw new Error(`Admin user with email ${email} already exists`);
+        }
+      } catch (checkError) {
+        // If existence check fails (e.g., no admin token), skip it and proceed
+        console.warn('Could not check if admin user exists, proceeding with creation...');
+      }
+    }
+    
+    const recordId = id();
+    const now = Date.now();
+    
+    await db.transact([
+      db.tx.admin_users[recordId].create({
+        email: email.toLowerCase().trim(),
+        role: role,
+        createdAt: now,
+      })
+    ]);
+  } catch (error) {
+    console.error('Error creating admin user in InstantDB:', error);
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('Failed to create admin user');
   }
 }
 
