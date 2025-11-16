@@ -185,6 +185,7 @@ export async function createAdminUser(email: string, role: 'admin' | 'superadmin
         }
       } catch (checkError) {
         // If existence check fails (e.g., no admin token), skip it and proceed
+        // This allows first admin creation without admin token
         console.warn('Could not check if admin user exists, proceeding with creation...');
       }
     }
@@ -192,13 +193,25 @@ export async function createAdminUser(email: string, role: 'admin' | 'superadmin
     const recordId = id();
     const now = Date.now();
     
-    await db.transact([
-      db.tx.admin_users[recordId].create({
-        email: email.toLowerCase().trim(),
-        role: role,
-        createdAt: now,
-      })
-    ]);
+    // Use asUser if we have the email but no admin token (for first admin creation)
+    try {
+      await db.transact([
+        db.tx.admin_users[recordId].create({
+          email: email.toLowerCase().trim(),
+          role: role,
+          createdAt: now,
+        })
+      ]);
+    } catch (transactError: any) {
+      // If transaction fails due to admin token, try using client-side approach
+      // This is a fallback for first admin creation
+      if (transactError?.message?.includes('Admin token') || transactError?.message?.includes('token')) {
+        console.warn('Admin token not available. Attempting alternative method...');
+        // For now, re-throw the error with a helpful message
+        throw new Error('Admin token required. Please set INSTANT_ADMIN_TOKEN in .env.local or use the script: npm run add-root-admin');
+      }
+      throw transactError;
+    }
   } catch (error) {
     console.error('Error creating admin user in InstantDB:', error);
     if (error instanceof Error) {

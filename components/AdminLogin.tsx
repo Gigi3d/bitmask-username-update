@@ -54,6 +54,32 @@ export default function AdminLogin() {
         code: magicCode.trim() 
       });
       
+      // Try to create admin user record if it doesn't exist (first-time login)
+      try {
+        const response = await fetch('/api/admin/create', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email: email.trim(),
+            role: 'admin', // First user gets admin role, can be upgraded to superadmin later
+          }),
+        });
+        
+        // If it fails because user already exists, that's fine
+        if (!response.ok) {
+          const data = await response.json();
+          if (!data.error?.includes('already exists')) {
+            console.warn('Could not create admin user record:', data.error);
+          }
+        }
+      } catch (err) {
+        // If admin creation fails (e.g., no admin token), that's okay
+        // The user can still access the dashboard, but API routes will require admin_users record
+        console.warn('Could not auto-create admin user record. You may need to add the user manually.');
+      }
+      
       // Redirect on success
       router.push('/admin/dashboard');
     } catch (err: any) {

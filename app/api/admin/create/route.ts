@@ -28,14 +28,36 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if admin token is set
-    if (!process.env.INSTANT_ADMIN_TOKEN) {
-      return NextResponse.json(
-        { 
-          error: 'INSTANT_ADMIN_TOKEN is not set. Please set it in your .env.local file.',
-          instructions: 'Get your admin token from the InstantDB dashboard: https://instantdb.com/dashboard'
-        },
-        { status: 500 }
-      );
+    // Allow first admin creation without token if no admins exist yet
+    const hasAdminToken = !!process.env.INSTANT_ADMIN_TOKEN;
+    
+    if (!hasAdminToken) {
+      // Check if any admins exist
+      try {
+        const { getAdminUsers } = await import('@/lib/storage');
+        const existingAdmins = await getAdminUsers();
+        
+        // If admins already exist, require admin token
+        if (existingAdmins.length > 0) {
+          return NextResponse.json(
+            { 
+              error: 'INSTANT_ADMIN_TOKEN is required to add additional admins. Please set it in your .env.local file.',
+              instructions: 'Get your admin token from the InstantDB dashboard: https://instantdb.com/dashboard'
+            },
+            { status: 500 }
+          );
+        }
+        // If no admins exist, allow creation without token (first admin)
+      } catch (error) {
+        // If we can't check, require admin token to be safe
+        return NextResponse.json(
+          { 
+            error: 'INSTANT_ADMIN_TOKEN is required. Please set it in your .env.local file.',
+            instructions: 'Get your admin token from the InstantDB dashboard: https://instantdb.com/dashboard'
+          },
+          { status: 500 }
+        );
+      }
     }
 
     await createAdminUser(email, role as 'admin' | 'superadmin', false);

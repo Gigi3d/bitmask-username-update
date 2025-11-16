@@ -1,34 +1,28 @@
 import { NextRequest } from 'next/server';
-import { getAdminDb } from './instantdb';
+import { adminUserExists } from './storage';
 
 /**
  * Verify if a user is authenticated as admin
- * This checks the auth token from the request headers
+ * This checks if the user's email exists in the admin_users table
  */
-export async function verifyAdminAuth(request: NextRequest): Promise<{ authenticated: boolean; userId?: string; error?: string }> {
+export async function verifyAdminAuth(request: NextRequest): Promise<{ authenticated: boolean; userId?: string; email?: string; error?: string }> {
   try {
-    // Get auth token from Authorization header or cookie
-    const authHeader = request.headers.get('authorization');
-    const token = authHeader?.replace('Bearer ', '') || request.cookies.get('instant-auth-token')?.value;
+    // Get user email from request headers
+    // The client should send the user's email in the x-user-email header
+    const userEmail = request.headers.get('x-user-email');
     
-    if (!token) {
-      return { authenticated: false, error: 'No authentication token provided' };
+    if (!userEmail) {
+      return { authenticated: false, error: 'User email not provided. Please include user email in x-user-email header.' };
     }
 
-    // For InstantDB, we can verify the token using the admin SDK
-    // Note: InstantDB handles auth tokens automatically on the client side
-    // For server-side verification, we may need to check the user's role in the database
-    // This is a simplified version - in production, you'd want more robust token verification
+    // Check if user exists in admin_users table
+    const isAdmin = await adminUserExists(userEmail);
     
-    const db = getAdminDb();
-    
-    // Try to get user info from the token
-    // Note: InstantDB admin SDK may have different methods for token verification
-    // This is a placeholder - adjust based on InstantDB's actual API
-    
-    // For now, we'll return authenticated if token exists
-    // In production, you should verify the token properly with InstantDB
-    return { authenticated: true };
+    if (!isAdmin) {
+      return { authenticated: false, error: `User ${userEmail} is not an admin. Please ensure the user is added to the admin_users table.` };
+    }
+
+    return { authenticated: true, email: userEmail };
   } catch (error) {
     console.error('Auth verification error:', error);
     return { authenticated: false, error: 'Failed to verify authentication' };

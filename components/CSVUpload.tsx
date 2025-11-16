@@ -1,8 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import { db } from '@/lib/instantdb';
 
 export default function CSVUpload() {
+  const { user } = db.useAuth();
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState('');
@@ -34,11 +36,19 @@ export default function CSVUpload() {
     setSuccess(false);
 
     try {
+      if (!user?.email) {
+        setError('User email not available. Please log in again.');
+        return;
+      }
+
       const formData = new FormData();
       formData.append('file', file);
 
       const response = await fetch('/api/csv/upload', {
         method: 'POST',
+        headers: {
+          'x-user-email': user.email,
+        },
         body: formData,
       });
 
