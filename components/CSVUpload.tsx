@@ -60,21 +60,32 @@ export default function CSVUpload() {
         });
 
         xhr.addEventListener('load', () => {
+          // Parse headers
+          const headers: Record<string, string> = {};
+          xhr.getAllResponseHeaders().split('\r\n').forEach((line) => {
+            const [key, value] = line.split(': ');
+            if (key) headers[key] = value;
+          });
+          
+          const response = new Response(xhr.responseText, {
+            status: xhr.status,
+            statusText: xhr.statusText,
+            headers: new Headers(headers)
+          });
+          
           if (xhr.status >= 200 && xhr.status < 300) {
-            // Parse headers
-            const headers: Record<string, string> = {};
-            xhr.getAllResponseHeaders().split('\r\n').forEach((line) => {
-              const [key, value] = line.split(': ');
-              if (key) headers[key] = value;
-            });
-            
-            resolve(new Response(xhr.responseText, {
-              status: xhr.status,
-              statusText: xhr.statusText,
-              headers: new Headers(headers)
-            }));
+            resolve(response);
           } else {
-            reject(new Error(`HTTP ${xhr.status}: ${xhr.statusText}`));
+            // Try to parse error message from response
+            try {
+              const errorData = JSON.parse(xhr.responseText);
+              const errorMessage = errorData.message || `HTTP ${xhr.status}: ${xhr.statusText}`;
+              const errorDetails = errorData.details ? `\n\n${errorData.details}` : '';
+              reject(new Error(errorMessage + errorDetails));
+            } catch {
+              // If JSON parsing fails, use status text
+              reject(new Error(`HTTP ${xhr.status}: ${xhr.statusText || 'Bad Request'}`));
+            }
           }
         });
 
@@ -95,7 +106,10 @@ export default function CSVUpload() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || 'Failed to upload CSV');
+        // Include details if available
+        const errorMsg = data.message || 'Failed to upload CSV';
+        const errorDetails = data.details ? `\n\n${data.details}` : '';
+        throw new Error(errorMsg + errorDetails);
       }
 
       setUploadProgress(100);
@@ -159,7 +173,7 @@ export default function CSVUpload() {
 
         {error && (
           <div className="bg-red-900/30 border border-red-700 rounded-lg p-3 text-red-400 text-sm">
-            {error}
+            <div className="whitespace-pre-wrap break-words">{error}</div>
           </div>
         )}
 
