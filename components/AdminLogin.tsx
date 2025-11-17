@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { auth } from '@/lib/instantdb';
 
@@ -11,6 +11,17 @@ export default function AdminLogin() {
   const [codeSent, setCodeSent] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  // Debug logging
+  useEffect(() => {
+    console.log('🔍 AdminLogin mounted');
+    console.log('📧 App ID:', process.env.NEXT_PUBLIC_INSTANT_APP_ID ? 'Set' : 'Missing');
+    console.log('🔐 Auth object:', auth ? 'Available' : 'Missing');
+    console.log('🔐 Auth methods:', {
+      sendMagicCode: typeof auth?.sendMagicCode === 'function',
+      signInWithMagicCode: typeof auth?.signInWithMagicCode === 'function',
+    });
+  }, []);
 
   const handleSendCode = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,11 +59,18 @@ export default function AdminLogin() {
         return;
       }
 
+      console.log('🔐 Verifying magic code...');
+      
       // Verify magic code and sign in
       await auth.signInWithMagicCode({ 
         email: email.trim(), 
         code: magicCode.trim() 
       });
+      
+      console.log('✅ Magic code verified, waiting for auth state...');
+      
+      // Wait a moment for auth state to update
+      await new Promise(resolve => setTimeout(resolve, 500));
       
       // Try to create admin user record if it doesn't exist (first-time login)
       try {
@@ -80,12 +98,12 @@ export default function AdminLogin() {
         console.warn('Could not auto-create admin user record. You may need to add the user manually.');
       }
       
-      // Redirect on success
-      router.push('/admin/dashboard');
+      console.log('🚀 Redirecting to dashboard...');
+      // Use window.location for a full page reload to ensure auth state is fresh
+      window.location.href = '/admin/dashboard';
     } catch (err: any) {
-      console.error('Login error:', err);
+      console.error('❌ Login error:', err);
       setError(err?.message || 'Invalid magic code. Please try again.');
-    } finally {
       setIsLoading(false);
     }
   };

@@ -60,10 +60,24 @@ export default function AdminDashboard() {
   }, [user, isLoading, adminCheckDone, adminData]);
 
   useEffect(() => {
-    // Redirect to login if not authenticated (after loading)
-    if (!isLoading && !user) {
-      router.push('/admin/login');
-    }
+    // Log auth state for debugging
+    console.log('🔍 AdminDashboard auth check:', { 
+      isLoading, 
+      user: user?.email || 'null',
+      hasUser: !!user 
+    });
+    
+    // Give auth state time to update after redirect (race condition fix)
+    const checkAuth = setTimeout(() => {
+      if (!isLoading && !user) {
+        console.log('⚠️ No user found after delay, redirecting to login...');
+        router.push('/admin/login');
+      } else if (user) {
+        console.log('✅ User authenticated:', user.email);
+      }
+    }, 1000); // Wait 1 second before checking
+
+    return () => clearTimeout(checkAuth);
   }, [user, isLoading, router]);
 
   const handleLogout = async () => {
