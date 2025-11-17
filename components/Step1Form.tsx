@@ -53,7 +53,9 @@ export default function Step1Form({ onNext, initialValue = '' }: Step1FormProps)
       // Validation passed, proceed to next step
       onNext(trimmedUsername);
     } catch (err) {
-      console.error('Error verifying old username:', err);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error verifying old username:', err);
+      }
       setError('Failed to verify username. Please try again.');
       setIsVerifying(false);
     }

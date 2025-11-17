@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback, memo } from 'react';
 import StepIndicator from './StepIndicator';
 import Step1Form from './Step1Form';
 import Step2Form from './Step2Form';
@@ -15,19 +15,19 @@ export default function UpdateFlow() {
     newUsername: '',
   });
 
-  const handleStep1Next = (oldUsername: string) => {
+  const handleStep1Next = useCallback((oldUsername: string) => {
     setFormData(prev => ({ ...prev, oldUsername }));
     setCurrentStep(2);
-  };
+  }, []);
 
-  const handleStep2Next = (telegramAccount: string) => {
+  const handleStep2Next = useCallback((telegramAccount: string) => {
     setFormData(prev => ({ ...prev, telegramAccount }));
     setCurrentStep(3);
-  };
+  }, []);
 
-  const handleStep2Back = () => {
+  const handleStep2Back = useCallback(() => {
     setCurrentStep(1);
-  };
+  }, []);
 
   const handleStep3Submit = async (newUsername: string) => {
     try {
@@ -38,11 +38,13 @@ export default function UpdateFlow() {
         newUsername,
       };
 
-      console.log('🚀 Submitting username update:', {
-        oldUsername: formData.oldUsername,
-        telegramAccount: formData.telegramAccount,
-        newUsername,
-      });
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🚀 Submitting username update:', {
+          oldUsername: formData.oldUsername,
+          telegramAccount: formData.telegramAccount,
+          newUsername,
+        });
+      }
 
       const response = await fetch('/api/users/update', {
         method: 'POST',
@@ -60,22 +62,26 @@ export default function UpdateFlow() {
         throw new Error(errorMsg + errorDetails);
       }
 
-      console.log('✅ Username update successful');
+      if (process.env.NODE_ENV === 'development') {
+        console.log('✅ Username update successful');
+      }
 
       // Update state only after successful API call
       setFormData(prev => ({ ...prev, newUsername }));
       setCurrentStep(4); // Success screen
     } catch (error) {
-      console.error('❌ Error updating username:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('❌ Error updating username:', error);
+      }
       const errorMessage = error instanceof Error ? error.message : 'Failed to update username. Please try again.';
       // Re-throw to let Step3Form handle the error display
       throw error;
     }
   };
 
-  const handleStep3Back = () => {
+  const handleStep3Back = useCallback(() => {
     setCurrentStep(2);
-  };
+  }, []);
 
   return (
     <div className="min-h-screen bg-black flex items-center justify-center px-4 py-12">

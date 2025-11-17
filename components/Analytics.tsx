@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import {
   LineChart,
   Line,
@@ -20,14 +20,8 @@ export default function Analytics() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    fetchAnalytics();
-    // Refresh every 30 seconds
-    const interval = setInterval(fetchAnalytics, 30000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const fetchAnalytics = async () => {
+  // Memoize fetch function to prevent unnecessary re-creations
+  const fetchAnalytics = useCallback(async () => {
     try {
       const response = await fetch('/api/analytics/data');
       if (!response.ok) {
@@ -38,11 +32,20 @@ export default function Analytics() {
       setError('');
     } catch (err) {
       setError('Failed to load analytics data');
-      console.error(err);
+      if (process.env.NODE_ENV === 'development') {
+        console.error(err);
+      }
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchAnalytics();
+    // Refresh every 30 seconds
+    const interval = setInterval(fetchAnalytics, 30000);
+    return () => clearInterval(interval);
+  }, [fetchAnalytics]);
 
   if (isLoading) {
     return (

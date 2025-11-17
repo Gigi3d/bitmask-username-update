@@ -48,9 +48,15 @@ export async function GET() {
       activityTimeline,
     };
 
-    return NextResponse.json(analyticsData);
+    return NextResponse.json(analyticsData, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+      },
+    });
   } catch (error) {
-    console.error('Error fetching analytics:', error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Error fetching analytics:', error);
+    }
     const errorMessage = error instanceof Error ? error.message : 'Failed to fetch analytics';
     return NextResponse.json(
       { 

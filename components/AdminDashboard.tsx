@@ -1,11 +1,22 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { db, auth } from '@/lib/instantdb';
 import { id } from '@instantdb/react';
+import dynamic from 'next/dynamic';
 import CSVUpload from '@/components/CSVUpload';
-import Analytics from '@/components/Analytics';
+
+// Lazy load Analytics component with recharts (heavy library)
+const Analytics = dynamic(() => import('@/components/Analytics'), {
+  loading: () => (
+    <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
+      <h2 className="text-2xl font-bold mb-4">Analytics</h2>
+      <div className="text-center py-12 text-gray-400">Loading analytics...</div>
+    </div>
+  ),
+  ssr: false, // Charts don't need SSR
+});
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -31,7 +42,9 @@ export default function AdminDashboard() {
         
         if (!userIsAdmin) {
           // Admin record doesn't exist, try to create it
-          console.log('Creating admin user record for:', user.email);
+          if (process.env.NODE_ENV === 'development') {
+            console.log('Creating admin user record for:', user.email);
+          }
           
           const recordId = id();
           const now = Date.now();
@@ -44,10 +57,14 @@ export default function AdminDashboard() {
             })
           ]);
           
-          console.log('Admin user record created successfully');
+          if (process.env.NODE_ENV === 'development') {
+            console.log('Admin user record created successfully');
+          }
         }
       } catch (error: any) {
-        console.error('Error creating admin user record:', error);
+        if (process.env.NODE_ENV === 'development') {
+          console.error('Error creating admin user record:', error);
+        }
         setAdminCreationError(
           error?.message || 'Could not create admin record. You may need to set INSTANT_ADMIN_TOKEN and use the script.'
         );
@@ -60,19 +77,23 @@ export default function AdminDashboard() {
   }, [user, isLoading, adminCheckDone, adminData]);
 
   useEffect(() => {
-    // Log auth state for debugging
-    console.log('🔍 AdminDashboard auth check:', { 
-      isLoading, 
-      user: user?.email || 'null',
-      hasUser: !!user 
-    });
+    // Log auth state for debugging (development only)
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔍 AdminDashboard auth check:', { 
+        isLoading, 
+        user: user?.email || 'null',
+        hasUser: !!user 
+      });
+    }
     
     // Give auth state time to update after redirect (race condition fix)
     const checkAuth = setTimeout(() => {
       if (!isLoading && !user) {
-        console.log('⚠️ No user found after delay, redirecting to login...');
+        if (process.env.NODE_ENV === 'development') {
+          console.log('⚠️ No user found after delay, redirecting to login...');
+        }
         router.push('/admin/login');
-      } else if (user) {
+      } else if (user && process.env.NODE_ENV === 'development') {
         console.log('✅ User authenticated:', user.email);
       }
     }, 1000); // Wait 1 second before checking
@@ -80,16 +101,18 @@ export default function AdminDashboard() {
     return () => clearTimeout(checkAuth);
   }, [user, isLoading, router]);
 
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async () => {
     try {
       await auth.signOut();
       router.push('/admin/login');
     } catch (error) {
-      console.error('Logout error:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Logout error:', error);
+      }
       // Still redirect even if logout fails
       router.push('/admin/login');
     }
-  };
+  }, [auth, router]);
 
   // Show loading state while checking authentication
   if (isLoading) {

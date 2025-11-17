@@ -67,7 +67,9 @@ export async function POST(request: NextRequest) {
       message: `Successfully created ${role} user: ${email}`,
     });
   } catch (error) {
-    console.error('Error creating admin user:', error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Error creating admin user:', error);
+    }
     
     if (error instanceof Error) {
       if (error.message.includes('already exists')) {

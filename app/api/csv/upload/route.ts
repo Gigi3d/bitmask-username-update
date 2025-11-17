@@ -43,32 +43,40 @@ export async function POST(request: NextRequest) {
     try {
       csvContent = await file.text();
     } catch (error) {
-      console.error('Error reading file:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error reading file:', error);
+      }
       return NextResponse.json(
         { message: 'Failed to read file content' },
         { status: 400 }
       );
     }
 
-    // Log CSV file details for debugging
-    console.log('📄 CSV file received:', {
-      name: file.name,
-      size: file.size,
-      type: file.type,
-      contentLength: csvContent.length,
-      first100Chars: csvContent.substring(0, 100)
-    });
+    // Log CSV file details for debugging (development only)
+    if (process.env.NODE_ENV === 'development') {
+      console.log('📄 CSV file received:', {
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        contentLength: csvContent.length,
+        first100Chars: csvContent.substring(0, 100)
+      });
+    }
 
     // Parse CSV
     let parsedRows: CSVRow[];
     try {
       parsedRows = parseCSV(csvContent);
-      console.log('✅ CSV parsed successfully:', {
-        rowCount: parsedRows.length,
-        sampleRow: parsedRows[0] || null
-      });
+      if (process.env.NODE_ENV === 'development') {
+        console.log('✅ CSV parsed successfully:', {
+          rowCount: parsedRows.length,
+          sampleRow: parsedRows[0] || null
+        });
+      }
     } catch (error) {
-      console.error('❌ Error parsing CSV:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('❌ Error parsing CSV:', error);
+      }
       const errorMessage = error instanceof Error ? error.message : 'Invalid CSV format';
       
       // Provide more helpful error message
@@ -89,14 +97,16 @@ export async function POST(request: NextRequest) {
     }
 
     if (parsedRows.length === 0) {
-      // Log more details about why no rows were parsed
-      const lines = csvContent.trim().split(/\r?\n|\r/).filter(line => line.trim());
-      console.error('❌ No valid rows found:', {
-        totalLines: lines.length,
-        headerLine: lines[0],
-        firstDataLine: lines[1],
-        allLines: lines.slice(0, 5)
-      });
+      // Log more details about why no rows were parsed (development only)
+      if (process.env.NODE_ENV === 'development') {
+        const lines = csvContent.trim().split(/\r?\n|\r/).filter(line => line.trim());
+        console.error('❌ No valid rows found:', {
+          totalLines: lines.length,
+          headerLine: lines[0],
+          firstDataLine: lines[1],
+          allLines: lines.slice(0, 5)
+        });
+      }
       
       return NextResponse.json(
         { 
@@ -129,7 +139,9 @@ export async function POST(request: NextRequest) {
     try {
       await setCSVData(csvDataMap);
     } catch (error) {
-      console.error('Error storing CSV data:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error storing CSV data:', error);
+      }
       const errorMessage = error instanceof Error ? error.message : 'Failed to store CSV data';
       return NextResponse.json(
         { 
@@ -154,7 +166,9 @@ export async function POST(request: NextRequest) {
       })
     });
   } catch (error) {
-    console.error('Unexpected error in CSV upload:', error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Unexpected error in CSV upload:', error);
+    }
     const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
     return NextResponse.json(
       { 

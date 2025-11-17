@@ -34,7 +34,9 @@ export default function Step3Form({ onSubmit, onBack, initialValue = '' }: Step3
     try {
       await onSubmit(newUsername.trim());
     } catch (err) {
-      console.error('Error in Step3Form:', err);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error in Step3Form:', err);
+      }
       setError(err instanceof Error ? err.message : 'Failed to update username. Please try again.');
       setIsSubmitting(false);
     }
@@ -67,7 +69,7 @@ export default function Step3Form({ onSubmit, onBack, initialValue = '' }: Step3
           </div>
         )}
         <p className="mt-2 text-gray-400 text-sm">
-          This will be your username on the mainnet wallet
+          Create a brand new bitmask wallet and input the new bitmask username
         </p>
       </div>
 

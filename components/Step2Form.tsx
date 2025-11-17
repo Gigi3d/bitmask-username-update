@@ -61,7 +61,9 @@ export default function Step2Form({ onNext, onBack, oldUsername, initialValue = 
       // Validation passed, proceed to next step
       onNext(cleanHandle);
     } catch (err) {
-      console.error('Error verifying telegram account:', err);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error verifying telegram account:', err);
+      }
       setError('Failed to verify Telegram account. Please try again.');
       setIsVerifying(false);
     }

@@ -57,7 +57,9 @@ export async function POST(request: NextRequest) {
       matchCount: matchingRecords.length,
     });
   } catch (error) {
-    console.error('Error verifying old username:', error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Error verifying old username:', error);
+    }
     const errorMessage = error instanceof Error ? error.message : 'Failed to verify old username';
     return NextResponse.json(
       { 

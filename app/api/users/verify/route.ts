@@ -64,7 +64,9 @@ export async function POST(request: NextRequest) {
       data: csvRow,
     });
   } catch (error) {
-    console.error('Error verifying user:', error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Error verifying user:', error);
+    }
     const errorMessage = error instanceof Error ? error.message : 'Failed to verify user';
     return NextResponse.json(
       { 

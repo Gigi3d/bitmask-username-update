@@ -12,16 +12,18 @@ export default function AdminLogin() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Debug logging
+  // Debug logging (development only)
   useEffect(() => {
-    console.log('🔍 AdminLogin mounted');
-    console.log('📧 App ID:', process.env.NEXT_PUBLIC_INSTANT_APP_ID ? 'Set' : 'Missing');
-    console.log('🔐 Auth object:', auth ? 'Available' : 'Missing');
-    console.log('🔐 Auth methods:', {
-      sendMagicCode: typeof auth?.sendMagicCode === 'function',
-      signInWithMagicCode: typeof auth?.signInWithMagicCode === 'function',
-    });
-  }, []);
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔍 AdminLogin mounted');
+      console.log('📧 App ID:', process.env.NEXT_PUBLIC_INSTANT_APP_ID ? 'Set' : 'Missing');
+      console.log('🔐 Auth object:', auth ? 'Available' : 'Missing');
+      console.log('🔐 Auth methods:', {
+        sendMagicCode: typeof auth?.sendMagicCode === 'function',
+        signInWithMagicCode: typeof auth?.signInWithMagicCode === 'function',
+      });
+    }
+  }, [auth]);
 
   const handleSendCode = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,7 +42,9 @@ export default function AdminLogin() {
       setCodeSent(true);
       setError('');
     } catch (err: any) {
-      console.error('Error sending magic code:', err);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error sending magic code:', err);
+      }
       setError(err?.message || 'Failed to send magic code. Please try again.');
     } finally {
       setIsLoading(false);
@@ -59,7 +63,9 @@ export default function AdminLogin() {
         return;
       }
 
-      console.log('🔐 Verifying magic code...');
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔐 Verifying magic code...');
+      }
       
       // Verify magic code and sign in
       await auth.signInWithMagicCode({ 
@@ -67,7 +73,9 @@ export default function AdminLogin() {
         code: magicCode.trim() 
       });
       
-      console.log('✅ Magic code verified, waiting for auth state...');
+      if (process.env.NODE_ENV === 'development') {
+        console.log('✅ Magic code verified, waiting for auth state...');
+      }
       
       // Wait a moment for auth state to update
       await new Promise(resolve => setTimeout(resolve, 500));
@@ -88,21 +96,27 @@ export default function AdminLogin() {
         // If it fails because user already exists, that's fine
         if (!response.ok) {
           const data = await response.json();
-          if (!data.error?.includes('already exists')) {
+          if (!data.error?.includes('already exists') && process.env.NODE_ENV === 'development') {
             console.warn('Could not create admin user record:', data.error);
           }
         }
       } catch (err) {
         // If admin creation fails (e.g., no admin token), that's okay
         // The user can still access the dashboard, but API routes will require admin_users record
-        console.warn('Could not auto-create admin user record. You may need to add the user manually.');
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('Could not auto-create admin user record. You may need to add the user manually.');
+        }
       }
       
-      console.log('🚀 Redirecting to dashboard...');
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🚀 Redirecting to dashboard...');
+      }
       // Use window.location for a full page reload to ensure auth state is fresh
       window.location.href = '/admin/dashboard';
     } catch (err: any) {
-      console.error('❌ Login error:', err);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('❌ Login error:', err);
+      }
       setError(err?.message || 'Invalid magic code. Please try again.');
       setIsLoading(false);
     }

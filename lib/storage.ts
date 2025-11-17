@@ -4,11 +4,22 @@ import { id } from '@instantdb/admin';
 
 // Server-side functions using InstantDB Admin SDK
 
+// Cache for CSV data with TTL
+let csvDataCache: { data: Map<string, CSVRow>; timestamp: number } | null = null;
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
 /**
  * Get all CSV records from InstantDB
  * Returns a Map keyed by normalized telegram account
+ * Uses in-memory cache with TTL to reduce database queries
  */
-export async function getCSVData(): Promise<Map<string, CSVRow>> {
+export async function getCSVData(forceRefresh: boolean = false): Promise<Map<string, CSVRow>> {
+  // Return cached data if still valid and not forcing refresh
+  const now = Date.now();
+  if (!forceRefresh && csvDataCache && (now - csvDataCache.timestamp) < CACHE_TTL) {
+    return csvDataCache.data;
+  }
+
   try {
     const db = getAdminDb();
     const result = await db.query({ csv_records: {} });
@@ -28,9 +39,17 @@ export async function getCSVData(): Promise<Map<string, CSVRow>> {
       }
     }
     
+    // Update cache
+    csvDataCache = {
+      data: csvData,
+      timestamp: now,
+    };
+    
     return csvData;
   } catch (error) {
-    console.error('Error fetching CSV data from InstantDB:', error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Error fetching CSV data from InstantDB:', error);
+    }
     throw new Error('Failed to fetch CSV data');
   }
 }
@@ -73,8 +92,13 @@ export async function setCSVData(data: Map<string, CSVRow>): Promise<void> {
     }
     
     await db.transact(txChunks);
+    
+    // Invalidate cache after updating CSV data
+    csvDataCache = null;
   } catch (error) {
-    console.error('Error setting CSV data in InstantDB:', error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Error setting CSV data in InstantDB:', error);
+    }
     throw new Error('Failed to save CSV data');
   }
 }
@@ -105,7 +129,9 @@ export async function getUserUpdates(): Promise<UserUpdateData[]> {
       };
     });
   } catch (error) {
-    console.error('Error fetching user updates from InstantDB:', error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Error fetching user updates from InstantDB:', error);
+    }
     throw new Error('Failed to fetch user updates');
   }
 }
@@ -128,7 +154,9 @@ export async function addUserUpdate(update: UserUpdateData): Promise<void> {
       })
     ]);
   } catch (error) {
-    console.error('Error adding user update to InstantDB:', error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Error adding user update to InstantDB:', error);
+    }
     throw new Error('Failed to save user update');
   }
 }
@@ -151,7 +179,9 @@ export async function getAdminUsers(): Promise<AdminUserRecord[]> {
     
     return admins.map((admin) => admin as AdminUserRecord);
   } catch (error) {
-    console.error('Error fetching admin users from InstantDB:', error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Error fetching admin users from InstantDB:', error);
+    }
     throw new Error('Failed to fetch admin users');
   }
 }
@@ -164,7 +194,9 @@ export async function adminUserExists(email: string): Promise<boolean> {
     const admins = await getAdminUsers();
     return admins.some(admin => admin.email.toLowerCase() === email.toLowerCase());
   } catch (error) {
-    console.error('Error checking admin user existence:', error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Error checking admin user existence:', error);
+    }
     return false;
   }
 }
@@ -186,7 +218,9 @@ export async function createAdminUser(email: string, role: 'admin' | 'superadmin
       } catch (checkError) {
         // If existence check fails (e.g., no admin token), skip it and proceed
         // This allows first admin creation without admin token
-        console.warn('Could not check if admin user exists, proceeding with creation...');
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('Could not check if admin user exists, proceeding with creation...');
+        }
       }
     }
     
@@ -206,14 +240,18 @@ export async function createAdminUser(email: string, role: 'admin' | 'superadmin
       // If transaction fails due to admin token, try using client-side approach
       // This is a fallback for first admin creation
       if (transactError?.message?.includes('Admin token') || transactError?.message?.includes('token')) {
-        console.warn('Admin token not available. Attempting alternative method...');
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('Admin token not available. Attempting alternative method...');
+        }
         // For now, re-throw the error with a helpful message
         throw new Error('Admin token required. Please set INSTANT_ADMIN_TOKEN in .env.local or use the script: npm run add-root-admin');
       }
       throw transactError;
     }
   } catch (error) {
-    console.error('Error creating admin user in InstantDB:', error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Error creating admin user in InstantDB:', error);
+    }
     if (error instanceof Error) {
       throw error;
     }

@@ -75,7 +75,9 @@ export async function POST(request: NextRequest) {
       data: updateRecord,
     });
   } catch (error) {
-    console.error('Error updating username:', error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Error updating username:', error);
+    }
     const errorMessage = error instanceof Error ? error.message : 'Failed to update username';
     return NextResponse.json(
       { 
