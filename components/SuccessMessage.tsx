@@ -10,7 +10,11 @@ interface SuccessMessageProps {
 export default function SuccessMessage({ oldUsername, newUsername }: SuccessMessageProps) {
   const [copied, setCopied] = useState(false);
   
-  const twitterMessage = `Just updated my Bitmask username from ${oldUsername} to ${newUsername} for mainnet! 🚀 #Bitmask #Mainnet`;
+  const twitterMessage = `Just updated my BitMask wallet username to ${newUsername} for RGB protocol on Bitcoin mainnet! 🚀
+
+Bitcoin Native Finance is here @BitMask_App 
+
+#Bitmask #Mainnet #RGB`;
 
   const handleCopy = async () => {
     try {
@@ -52,20 +56,22 @@ export default function SuccessMessage({ oldUsername, newUsername }: SuccessMess
       </div>
 
       <div className="bg-gray-900 border border-gray-700 rounded-lg p-6 mb-6">
-        <h3 className="text-lg font-semibold mb-3">Share on Twitter</h3>
-        <p className="text-gray-300 mb-4 text-left">{twitterMessage}</p>
+        <h3 className="text-lg font-semibold mb-3">Share on X (Twitter)</h3>
+        <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 mb-4">
+          <p className="text-gray-300 text-sm whitespace-pre-wrap text-left font-mono">{twitterMessage}</p>
+        </div>
         <div className="flex gap-3 justify-center">
           <button
             onClick={handleCopy}
             className="bg-gray-800 text-white font-semibold py-2 px-6 rounded-lg hover:bg-gray-700 transition-colors"
           >
-            {copied ? 'Copied!' : 'Copy'}
+            {copied ? 'Copied!' : 'Copy Text'}
           </button>
           <button
             onClick={handleShare}
             className="bg-accent text-black font-bold py-2 px-6 rounded-lg hover:opacity-90 transition-opacity"
           >
-            Share on Twitter
+            Share on X
           </button>
         </div>
       </div>

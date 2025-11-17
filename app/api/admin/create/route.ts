@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createAdminUser } from '@/lib/storage';
+import { createAdminUser, getAdminUsers } from '@/lib/storage';
 
 /**
  * API route to create an admin user
@@ -12,6 +12,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { email, role = 'admin' } = body;
+    const userEmail = request.headers.get('x-user-email');
 
     if (!email || typeof email !== 'string') {
       return NextResponse.json(
@@ -27,37 +28,58 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if admin token is set
-    // Allow first admin creation without token if no admins exist yet
-    const hasAdminToken = !!process.env.INSTANT_ADMIN_TOKEN;
-    
-    if (!hasAdminToken) {
-      // Check if any admins exist
+    // Check if the requester is a superadmin
+    if (userEmail) {
       try {
-        const { getAdminUsers } = await import('@/lib/storage');
-        const existingAdmins = await getAdminUsers();
+        const admins = await getAdminUsers();
+        const requester = admins.find(
+          admin => admin.email.toLowerCase() === userEmail.toLowerCase()
+        );
         
-        // If admins already exist, require admin token
-        if (existingAdmins.length > 0) {
+        if (!requester) {
           return NextResponse.json(
-            { 
-              error: 'INSTANT_ADMIN_TOKEN is required to add additional admins. Please set it in your .env.local file.',
-              instructions: 'Get your admin token from the InstantDB dashboard: https://instantdb.com/dashboard'
-            },
-            { status: 500 }
+            { error: 'Unauthorized. You must be an admin to add other admins.' },
+            { status: 403 }
           );
         }
-        // If no admins exist, allow creation without token (first admin)
+        
+        if (requester.role !== 'superadmin') {
+          return NextResponse.json(
+            { error: 'Unauthorized. Only superadmins can add other admins.' },
+            { status: 403 }
+          );
+        }
       } catch (error) {
-        // If we can't check, require admin token to be safe
+        // If we can't verify, allow if admin token is set (for first admin creation)
+        if (!process.env.INSTANT_ADMIN_TOKEN) {
+          return NextResponse.json(
+            { error: 'Unable to verify admin permissions. Please ensure you are logged in as a superadmin.' },
+            { status: 403 }
+          );
+        }
+      }
+    } else {
+      // If no user email provided, require admin token
+      if (!process.env.INSTANT_ADMIN_TOKEN) {
         return NextResponse.json(
-          { 
-            error: 'INSTANT_ADMIN_TOKEN is required. Please set it in your .env.local file.',
-            instructions: 'Get your admin token from the InstantDB dashboard: https://instantdb.com/dashboard'
-          },
-          { status: 500 }
+          { error: 'User email required in x-user-email header or INSTANT_ADMIN_TOKEN must be set.' },
+          { status: 400 }
         );
       }
+    }
+
+    // If no user email provided and no admin token, require one of them
+    // This allows first admin creation via script with admin token
+    const hasAdminToken = !!process.env.INSTANT_ADMIN_TOKEN;
+    
+    if (!userEmail && !hasAdminToken) {
+      return NextResponse.json(
+        { 
+          error: 'Either user email (x-user-email header) or INSTANT_ADMIN_TOKEN must be provided.',
+          instructions: 'Get your admin token from the InstantDB dashboard: https://instantdb.com/dashboard'
+        },
+        { status: 400 }
+      );
     }
 
     await createAdminUser(email, role as 'admin' | 'superadmin', false);

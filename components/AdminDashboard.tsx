@@ -6,6 +6,7 @@ import { db, auth } from '@/lib/instantdb';
 import { id } from '@instantdb/react';
 import dynamic from 'next/dynamic';
 import CSVUpload from '@/components/CSVUpload';
+import AdminManagement from '@/components/AdminManagement';
 
 // Lazy load Analytics component with recharts (heavy library)
 const Analytics = dynamic(() => import('@/components/Analytics'), {
@@ -26,6 +27,16 @@ export default function AdminDashboard() {
 
   // Query admin_users to check if current user is an admin
   const { data: adminData } = db.useQuery({ admin_users: {} });
+  
+  // Check if current user is a superadmin
+  const currentUserAdmin = adminData?.admin_users 
+    ? (Array.isArray(adminData.admin_users) 
+        ? adminData.admin_users 
+        : Object.values(adminData.admin_users))
+        .find((admin: any) => admin.email?.toLowerCase() === user?.email?.toLowerCase())
+    : null;
+  
+  const isSuperAdmin = currentUserAdmin?.role === 'superadmin';
 
   // Check and create admin user record if needed
   useEffect(() => {
@@ -155,6 +166,7 @@ export default function AdminDashboard() {
         )}
 
         <div className="space-y-8">
+          {isSuperAdmin && <AdminManagement />}
           <CSVUpload />
           <Analytics />
         </div>
