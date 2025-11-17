@@ -6,10 +6,11 @@ import { validateTelegramHandle } from '@/lib/utils';
 interface Step2FormProps {
   onNext: (telegramAccount: string) => void;
   onBack: () => void;
+  oldUsername: string; // Required: old username from Step 1
   initialValue?: string;
 }
 
-export default function Step2Form({ onNext, onBack, initialValue = '' }: Step2FormProps) {
+export default function Step2Form({ onNext, onBack, oldUsername, initialValue = '' }: Step2FormProps) {
   const [telegramAccount, setTelegramAccount] = useState(initialValue);
   const [error, setError] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
@@ -35,25 +36,32 @@ export default function Step2Form({ onNext, onBack, initialValue = '' }: Step2Fo
     }
 
     try {
-      // Verify against CSV data via API
+      // Verify telegram account matches old username in CSV data
       const response = await fetch('/api/users/verify', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ telegramAccount: cleanHandle }),
+        body: JSON.stringify({ 
+          oldUsername: oldUsername,
+          telegramAccount: cleanHandle 
+        }),
       });
 
       const data = await response.json();
 
       if (!response.ok || !data.valid) {
-        setError(data.message || 'Telegram account not found in campaign records');
+        // Show detailed error message
+        const errorMsg = data.message || 'Telegram account verification failed';
+        setError(errorMsg);
         setIsVerifying(false);
         return;
       }
 
+      // Validation passed, proceed to next step
       onNext(cleanHandle);
     } catch (err) {
+      console.error('Error verifying telegram account:', err);
       setError('Failed to verify Telegram account. Please try again.');
       setIsVerifying(false);
     }
@@ -75,10 +83,18 @@ export default function Step2Form({ onNext, onBack, initialValue = '' }: Step2Fo
           autoFocus
         />
         {error && (
-          <p className="mt-2 text-red-400 text-sm">{error}</p>
+          <div className="mt-2 bg-red-900/30 border border-red-700 rounded-lg p-3">
+            <p className="text-red-400 text-sm whitespace-pre-wrap break-words">{error}</p>
+          </div>
+        )}
+        {isVerifying && (
+          <div className="mt-2 flex items-center gap-2 text-gray-400 text-sm">
+            <div className="animate-spin rounded-full h-4 w-4 border-2 border-accent border-t-transparent"></div>
+            <span>Verifying telegram account matches username...</span>
+          </div>
         )}
         <p className="mt-2 text-gray-400 text-sm">
-          Enter the Telegram handle associated with your campaign account
+          Enter the Telegram handle associated with username: <strong className="text-accent">{oldUsername}</strong>
         </p>
       </div>
 

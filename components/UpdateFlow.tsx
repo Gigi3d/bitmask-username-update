@@ -38,6 +38,12 @@ export default function UpdateFlow() {
         newUsername,
       };
 
+      console.log('🚀 Submitting username update:', {
+        oldUsername: formData.oldUsername,
+        telegramAccount: formData.telegramAccount,
+        newUsername,
+      });
+
       const response = await fetch('/api/users/update', {
         method: 'POST',
         headers: {
@@ -49,16 +55,21 @@ export default function UpdateFlow() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || 'Failed to update username');
+        const errorMsg = data.message || 'Failed to update username';
+        const errorDetails = data.error ? `\n\nDetails: ${data.error}` : '';
+        throw new Error(errorMsg + errorDetails);
       }
+
+      console.log('✅ Username update successful');
 
       // Update state only after successful API call
       setFormData(prev => ({ ...prev, newUsername }));
       setCurrentStep(4); // Success screen
     } catch (error) {
-      console.error('Error updating username:', error);
+      console.error('❌ Error updating username:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to update username. Please try again.';
-      alert(errorMessage);
+      // Re-throw to let Step3Form handle the error display
+      throw error;
     }
   };
 
@@ -90,6 +101,7 @@ export default function UpdateFlow() {
             <Step2Form
               onNext={handleStep2Next}
               onBack={handleStep2Back}
+              oldUsername={formData.oldUsername}
               initialValue={formData.telegramAccount}
             />
           )}

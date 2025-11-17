@@ -32,9 +32,10 @@ export default function Step3Form({ onSubmit, onBack, initialValue = '' }: Step3
     }
 
     try {
-      onSubmit(newUsername.trim());
+      await onSubmit(newUsername.trim());
     } catch (err) {
-      setError('Failed to update username. Please try again.');
+      console.error('Error in Step3Form:', err);
+      setError(err instanceof Error ? err.message : 'Failed to update username. Please try again.');
       setIsSubmitting(false);
     }
   };
@@ -55,7 +56,15 @@ export default function Step3Form({ onSubmit, onBack, initialValue = '' }: Step3
           autoFocus
         />
         {error && (
-          <p className="mt-2 text-red-400 text-sm">{error}</p>
+          <div className="mt-2 bg-red-900/30 border border-red-700 rounded-lg p-3">
+            <p className="text-red-400 text-sm whitespace-pre-wrap break-words">{error}</p>
+          </div>
+        )}
+        {isSubmitting && (
+          <div className="mt-2 flex items-center gap-2 text-gray-400 text-sm">
+            <div className="animate-spin rounded-full h-4 w-4 border-2 border-accent border-t-transparent"></div>
+            <span>Submitting update...</span>
+          </div>
         )}
         <p className="mt-2 text-gray-400 text-sm">
           This will be your username on the mainnet wallet
