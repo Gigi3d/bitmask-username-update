@@ -11,6 +11,7 @@ export default function CSVUpload() {
   const [success, setSuccess] = useState(false);
   const [rowCount, setRowCount] = useState<number | null>(null);
   const [warning, setWarning] = useState('');
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -34,30 +35,70 @@ export default function CSVUpload() {
     setIsUploading(true);
     setError('');
     setSuccess(false);
+    setWarning('');
+    setUploadProgress(0);
 
     try {
       if (!user?.email) {
         setError('User email not available. Please log in again.');
+        setIsUploading(false);
         return;
       }
 
       const formData = new FormData();
       formData.append('file', file);
 
-      const response = await fetch('/api/csv/upload', {
-        method: 'POST',
-        headers: {
-          'x-user-email': user.email,
-        },
-        body: formData,
+      // Create XMLHttpRequest for progress tracking
+      const xhr = new XMLHttpRequest();
+      
+      const promise = new Promise<Response>((resolve, reject) => {
+        xhr.upload.addEventListener('progress', (e) => {
+          if (e.lengthComputable) {
+            const percentComplete = (e.loaded / e.total) * 100;
+            setUploadProgress(Math.round(percentComplete));
+          }
+        });
+
+        xhr.addEventListener('load', () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            // Parse headers
+            const headers: Record<string, string> = {};
+            xhr.getAllResponseHeaders().split('\r\n').forEach((line) => {
+              const [key, value] = line.split(': ');
+              if (key) headers[key] = value;
+            });
+            
+            resolve(new Response(xhr.responseText, {
+              status: xhr.status,
+              statusText: xhr.statusText,
+              headers: new Headers(headers)
+            }));
+          } else {
+            reject(new Error(`HTTP ${xhr.status}: ${xhr.statusText}`));
+          }
+        });
+
+        xhr.addEventListener('error', () => {
+          reject(new Error('Network error'));
+        });
+
+        xhr.addEventListener('abort', () => {
+          reject(new Error('Upload cancelled'));
+        });
+
+        xhr.open('POST', '/api/csv/upload');
+        xhr.setRequestHeader('x-user-email', user.email);
+        xhr.send(formData);
       });
 
+      const response = await promise;
       const data = await response.json();
 
       if (!response.ok) {
         throw new Error(data.message || 'Failed to upload CSV');
       }
 
+      setUploadProgress(100);
       setSuccess(true);
       setRowCount(data.rowCount || null);
       
@@ -75,8 +116,12 @@ export default function CSVUpload() {
       if (fileInput) {
         fileInput.value = '';
       }
+      
+      // Reset progress after a moment
+      setTimeout(() => setUploadProgress(0), 2000);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to upload CSV');
+      setUploadProgress(0);
     } finally {
       setIsUploading(false);
     }
@@ -127,6 +172,22 @@ export default function CSVUpload() {
         {warning && (
           <div className="bg-yellow-900/30 border border-yellow-700 rounded-lg p-3 text-yellow-400 text-sm">
             {warning}
+          </div>
+        )}
+
+        {/* Upload Progress Bar */}
+        {isUploading && (
+          <div className="space-y-2">
+            <div className="flex justify-between text-xs text-gray-400">
+              <span>Uploading...</span>
+              <span>{uploadProgress}%</span>
+            </div>
+            <div className="w-full bg-gray-800 rounded-full h-2.5">
+              <div
+                className="bg-accent h-2.5 rounded-full transition-all duration-300"
+                style={{ width: `${uploadProgress}%` }}
+              ></div>
+            </div>
           </div>
         )}
 

@@ -50,20 +50,48 @@ export function parseCSV(csvContent: string): CSVRow[] {
 
   // Parse header row
   const headers = parseCSVLine(lines[0]).map(h => h.trim().toLowerCase().replace(/^"|"$/g, ''));
-  
-  // Find column indices
-  const oldUsernameIdx = headers.findIndex(h => 
-    h.includes('old') && h.includes('username')
-  );
-  const telegramIdx = headers.findIndex(h => 
-    h.includes('telegram') || h.includes('tg')
-  );
-  const newUsernameIdx = headers.findIndex(h => 
-    h.includes('new') && h.includes('username')
-  );
+
+  // Find column indices with more flexible matching
+  const oldUsernameIdx = headers.findIndex(h => {
+    const lower = h.toLowerCase();
+    return (lower.includes('old') && lower.includes('username')) || 
+           lower === 'oldusername' || 
+           lower === 'old_username' ||
+           lower === 'old-username' ||
+           lower === 'oldusername' ||
+           lower.includes('oldusername');
+  });
+
+  const telegramIdx = headers.findIndex(h => {
+    const lower = h.toLowerCase();
+    return lower.includes('telegram') || 
+           lower.includes('tg') || 
+           lower === 'telegramaccount' ||
+           lower === 'telegram_account' ||
+           lower === 'telegram-account' ||
+           lower.includes('telegramaccount');
+  });
+
+  const newUsernameIdx = headers.findIndex(h => {
+    const lower = h.toLowerCase();
+    return (lower.includes('new') && lower.includes('username')) || 
+           lower === 'newusername' || 
+           lower === 'new_username' ||
+           lower === 'new-username' ||
+           lower === 'newusername' ||
+           lower.includes('newusername');
+  });
 
   if (oldUsernameIdx === -1 || telegramIdx === -1 || newUsernameIdx === -1) {
-    throw new Error('CSV must contain columns: old username, telegram account, new username');
+    const missing = [];
+    if (oldUsernameIdx === -1) missing.push('old username');
+    if (telegramIdx === -1) missing.push('telegram account');
+    if (newUsernameIdx === -1) missing.push('new username');
+    
+    throw new Error(
+      `CSV must contain columns: ${missing.join(', ')}. ` +
+      `Found headers: ${headers.join(', ')}`
+    );
   }
 
   const rows: CSVRow[] = [];

@@ -50,22 +50,61 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Log CSV file details for debugging
+    console.log('📄 CSV file received:', {
+      name: file.name,
+      size: file.size,
+      type: file.type,
+      contentLength: csvContent.length,
+      first100Chars: csvContent.substring(0, 100)
+    });
+
     // Parse CSV
     let parsedRows: CSVRow[];
     try {
       parsedRows = parseCSV(csvContent);
+      console.log('✅ CSV parsed successfully:', {
+        rowCount: parsedRows.length,
+        sampleRow: parsedRows[0] || null
+      });
     } catch (error) {
-      console.error('Error parsing CSV:', error);
+      console.error('❌ Error parsing CSV:', error);
       const errorMessage = error instanceof Error ? error.message : 'Invalid CSV format';
+      
+      // Provide more helpful error message
+      let detailedError = errorMessage;
+      if (errorMessage.includes('columns')) {
+        const lines = csvContent.trim().split(/\r?\n|\r/);
+        const headers = lines[0] || '';
+        detailedError = `${errorMessage}\n\nFound headers: ${headers}\n\nExpected headers should include:\n- A column with "old" and "username"\n- A column with "telegram" or "tg"\n- A column with "new" and "username"`;
+      }
+      
       return NextResponse.json(
-        { message: `CSV parsing error: ${errorMessage}` },
+        { 
+          message: `CSV parsing error: ${errorMessage}`,
+          details: process.env.NODE_ENV === 'development' ? detailedError : undefined
+        },
         { status: 400 }
       );
     }
 
     if (parsedRows.length === 0) {
+      // Log more details about why no rows were parsed
+      const lines = csvContent.trim().split(/\r?\n|\r/).filter(line => line.trim());
+      console.error('❌ No valid rows found:', {
+        totalLines: lines.length,
+        headerLine: lines[0],
+        firstDataLine: lines[1],
+        allLines: lines.slice(0, 5)
+      });
+      
       return NextResponse.json(
-        { message: 'CSV file contains no valid data rows' },
+        { 
+          message: 'CSV file contains no valid data rows',
+          details: process.env.NODE_ENV === 'development' 
+            ? `Found ${lines.length} lines. Make sure:\n1. Headers match expected format\n2. Data rows have all required fields filled\n3. No empty rows between data`
+            : undefined
+        },
         { status: 400 }
       );
     }
@@ -126,3 +165,4 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
