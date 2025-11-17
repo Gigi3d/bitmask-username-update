@@ -72,6 +72,19 @@ export function parseCSV(csvContent: string): CSVRow[] {
            lower.includes('telegramaccount');
   });
 
+  // Only oldUsername and telegramAccount are required; newUsername is optional
+  if (oldUsernameIdx === -1 || telegramIdx === -1) {
+    const missing = [];
+    if (oldUsernameIdx === -1) missing.push('old username');
+    if (telegramIdx === -1) missing.push('telegram account');
+    
+    throw new Error(
+      `CSV must contain columns: ${missing.join(', ')}. ` +
+      `Found headers: ${headers.join(', ')}`
+    );
+  }
+
+  // newUsername is optional - if column exists, use it; otherwise default to empty
   const newUsernameIdx = headers.findIndex(h => {
     const lower = h.toLowerCase();
     return (lower.includes('new') && lower.includes('username')) || 
@@ -82,18 +95,6 @@ export function parseCSV(csvContent: string): CSVRow[] {
            lower.includes('newusername');
   });
 
-  if (oldUsernameIdx === -1 || telegramIdx === -1 || newUsernameIdx === -1) {
-    const missing = [];
-    if (oldUsernameIdx === -1) missing.push('old username');
-    if (telegramIdx === -1) missing.push('telegram account');
-    if (newUsernameIdx === -1) missing.push('new username');
-    
-    throw new Error(
-      `CSV must contain columns: ${missing.join(', ')}. ` +
-      `Found headers: ${headers.join(', ')}`
-    );
-  }
-
   const rows: CSVRow[] = [];
   for (let i = 1; i < lines.length; i++) {
     const line = lines[i].trim();
@@ -102,17 +103,22 @@ export function parseCSV(csvContent: string): CSVRow[] {
     
     const values = parseCSVLine(line).map(v => v.replace(/^"|"$/g, '')); // Remove surrounding quotes
     
-    if (values.length > Math.max(oldUsernameIdx, telegramIdx, newUsernameIdx)) {
+    // Check if we have enough columns for required fields
+    const maxRequiredIdx = Math.max(oldUsernameIdx, telegramIdx);
+    if (values.length > maxRequiredIdx) {
       const oldUsername = values[oldUsernameIdx]?.trim() || '';
       const telegramAccount = values[telegramIdx]?.trim() || '';
-      const newUsername = values[newUsernameIdx]?.trim() || '';
+      // newUsername is optional - use it if column exists and has value, otherwise empty string
+      const newUsername = newUsernameIdx !== -1 && values.length > newUsernameIdx 
+        ? (values[newUsernameIdx]?.trim() || '')
+        : '';
       
-      // Only add row if all required fields are present
-      if (oldUsername && telegramAccount && newUsername) {
+      // Only require oldUsername and telegramAccount; newUsername can be empty
+      if (oldUsername && telegramAccount) {
         rows.push({
           oldUsername,
           telegramAccount,
-          newUsername,
+          newUsername, // Can be empty string
         });
       }
     }

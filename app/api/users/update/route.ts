@@ -36,8 +36,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate new username matches CSV data
-    if (csvRow.newUsername !== newUsername) {
+    // Validate new username matches CSV data (only if CSV has a newUsername value)
+    // If CSV newUsername is empty, allow any newUsername from user
+    if (csvRow.newUsername && csvRow.newUsername.trim() !== '' && csvRow.newUsername !== newUsername) {
       return NextResponse.json(
         { message: 'New username does not match expected value from records' },
         { status: 400 }
