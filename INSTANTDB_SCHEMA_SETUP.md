@@ -30,6 +30,7 @@ This guide will walk you through configuring all required entities in your Insta
    | `telegramAccount` | string | Yes | Telegram handle (with or without @) |
    | `newUsername` | string | Yes | New mainnet Bitmask username |
    | `createdAt` | number | Yes | Timestamp when record was created |
+   | `uploadedBy` | string | Yes | Email of the admin who uploaded the CSV |
 
 4. Save the entity
 
@@ -70,9 +71,9 @@ This guide will walk you through configuring all required entities in your Insta
 
 Your schema should now have exactly 3 entities:
 
-1. ✅ `csv_records` (4 fields)
-2. ✅ `user_updates` (4 fields)
-3. ✅ `admin_users` (3 fields)
+1. ✅ `csv_records` (5 fields: oldUsername, telegramAccount, newUsername, createdAt, uploadedBy)
+2. ✅ `user_updates` (4 fields: oldUsername, telegramAccount, newUsername, submittedAt)
+3. ✅ `admin_users` (3 fields: email, role, createdAt)
 
 ### Step 7: Configure Email Delivery (for Magic Code Auth)
 
@@ -102,7 +103,8 @@ export $(cat .env.local | xargs) && npx tsx scripts/add-root-admin-direct.ts
       "oldUsername": "string",
       "telegramAccount": "string",
       "newUsername": "string",
-      "createdAt": "number"
+      "createdAt": "number",
+      "uploadedBy": "string"
     },
     "user_updates": {
       "oldUsername": "string",
@@ -156,4 +158,5 @@ If you encounter issues:
 - Verify all field names match exactly (case-sensitive)
 - Ensure field types are correct (string/number)
 - Check that entities are saved and visible in the schema view
+
 

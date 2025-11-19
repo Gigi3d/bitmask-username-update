@@ -87,3 +87,9 @@ While automated tests are being set up, you can manually test:
 - Tests check for proper error messages and user feedback
 - Loading states are verified to ensure good UX
 
+
+
+
+
+
+
