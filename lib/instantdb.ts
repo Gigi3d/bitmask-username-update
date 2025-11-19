@@ -17,20 +17,53 @@ if (!appId) {
   throw new Error(error);
 }
 
-// Client-side InstantDB instance
-let db;
-try {
-  db = initClient({
-    appId,
-    schema: schema as any, // Use schema from instant.schema.ts which matches the database
-  });
-  
-  if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-    console.log('✅ InstantDB client initialized successfully');
+/**
+ * Client-side InstantDB instance - HMR-safe singleton pattern
+ * 
+ * Uses lazy initialization to prevent "module factory is not available" errors
+ * during Hot Module Replacement (HMR) in development. The db instance is only
+ * created when first accessed, and cached for subsequent accesses. This allows
+ * the module to be safely reloaded during HMR without breaking the application.
+ */
+let db: ReturnType<typeof initClient> | null = null;
+
+/**
+ * Gets or initializes the InstantDB client instance.
+ * Only initializes on the client side and handles HMR reloads gracefully.
+ */
+function getDb(): ReturnType<typeof initClient> {
+  // Only initialize on client side
+  if (typeof window === 'undefined') {
+    throw new Error('InstantDB client can only be used on the client side');
   }
-} catch (error: any) {
-  console.error('❌ Failed to initialize InstantDB client:', error);
-  throw error;
+
+  // If already initialized, return it (handles HMR by reusing existing instance)
+  if (db) {
+    return db;
+  }
+
+  try {
+    db = initClient({
+      appId: appId!,
+      schema: schema as unknown as Parameters<typeof initClient>[0]['schema'],
+    });
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log('✅ InstantDB client initialized successfully');
+    }
+    
+    return db;
+  } catch (error) {
+    const errorObj = error instanceof Error ? error : new Error(String(error));
+    console.error('❌ Failed to initialize InstantDB client:', errorObj);
+    
+    // During HMR, the module might be reloaded - reset db to allow retry
+    if (process.env.NODE_ENV === 'development') {
+      db = null;
+    }
+    
+    throw errorObj;
+  }
 }
 
 // Server-side InstantDB admin instance
@@ -53,7 +86,7 @@ export function getAdminDb() {
     const adminDb = initAdmin({
       appId: appId!, // appId is already validated above
       adminToken: adminToken || undefined,
-      schema: schema as any, // Use schema from instant.schema.ts which matches the database
+      schema: schema as unknown as Parameters<typeof initAdmin>[0]['schema'], // Use schema from instant.schema.ts which matches the database
     });
     
     if (process.env.NODE_ENV === 'development') {
@@ -61,17 +94,56 @@ export function getAdminDb() {
     }
     
     return adminDb;
-  } catch (error: any) {
-    console.error('❌ Failed to initialize InstantDB admin:', error);
-    throw error;
+  } catch (error) {
+    const errorObj = error instanceof Error ? error : new Error(String(error));
+    console.error('❌ Failed to initialize InstantDB admin:', errorObj);
+    throw errorObj;
   }
 }
 
-// Export db instance
-export { db };
+/**
+ * Export db instance as a Proxy for HMR safety.
+ * 
+ * The Proxy ensures:
+ * - Lazy initialization: db is only created when first accessed
+ * - HMR resilience: module can be reloaded without breaking
+ * - Proper method binding: functions maintain correct 'this' context
+ * - Nested object support: handles tx, auth, and other nested properties
+ */
+export const db = new Proxy({} as ReturnType<typeof initClient>, {
+  get(_target, prop) {
+    const instance = getDb();
+    const value = instance[prop as keyof typeof instance];
+    // Bind functions to maintain correct 'this' context
+    if (typeof value === 'function') {
+      return value.bind(instance);
+    }
+    // For nested objects (like tx), return a proxy that also binds methods
+    if (value && typeof value === 'object') {
+      return new Proxy(value, {
+        get(_innerTarget, innerProp) {
+          const innerValue = value[innerProp as keyof typeof value];
+          return typeof innerValue === 'function' ? innerValue.bind(value) : innerValue;
+        }
+      });
+    }
+    return value;
+  }
+});
 
-// Auth helpers
-export const auth = db.auth;
+/**
+ * Auth helpers - lazy initialization for HMR safety.
+ * 
+ * Provides access to InstantDB authentication methods (sendMagicCode, signInWithMagicCode)
+ * with proper lazy initialization and method binding for HMR compatibility.
+ */
+export const auth = new Proxy({} as ReturnType<typeof initClient>['auth'], {
+  get(_target, prop) {
+    const instance = getDb().auth;
+    const value = instance[prop as keyof typeof instance];
+    return typeof value === 'function' ? value.bind(instance) : value;
+  }
+});
 
 // Type helpers for queries
 export type AppSchema = typeof schema;

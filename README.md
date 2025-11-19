@@ -19,12 +19,25 @@ This application facilitates the migration of Bitmask usernames from campaign/te
 
 ### Admin Features
 - **Secure Authentication**: Admin login system using InstantDB
+- **Multi-Admin Support**: 
+  - Regular admins can upload their own CSV files with scoped data
+  - Each admin's CSV uploads are tracked separately
+  - Superadmins can manage other admins
 - **CSV Upload**: Upload and manage campaign data (old username, Telegram account, new username)
+  - Each admin maintains their own CSV dataset
+  - Uploading a new CSV replaces only that admin's previous upload
 - **Analytics Dashboard**: 
+  - **Superadmins**: See 100% analytics of ALL data from all admins
+  - **Regular Admins**: See analytics scoped to their own CSV data only
   - Total updates submitted
   - Daily and weekly update statistics
   - Success rate tracking
   - Activity timeline with interactive charts
+- **Real-time Username Updates Feed**: 
+  - Live feed of new bitmask username updates as they are submitted
+  - Shows old username → new username transitions
+  - Displays telegram account and timestamp
+  - Updates automatically without page refresh
 - **Real-time Data**: Analytics refresh every 30 seconds
 
 ## 🛠️ Tech Stack
@@ -189,6 +202,7 @@ The application uses InstantDB with the following schema:
   - `telegramAccount`: string
   - `newUsername`: string
   - `createdAt`: number (timestamp)
+  - `uploadedBy`: string (email of admin who uploaded the CSV)
 
 - **user_updates**: Submitted username updates
   - `oldUsername`: string
@@ -288,6 +302,61 @@ Ensure you set the following environment variables:
 
 This project is private and proprietary.
 
+## 🐛 Troubleshooting
+
+### HMR (Hot Module Replacement) Errors
+
+If you encounter errors like "Module factory is not available" during development:
+
+1. **Refresh the browser** - The app uses lazy initialization to handle HMR gracefully
+2. **Restart the dev server** if the error persists:
+   ```bash
+   # Stop server (Ctrl+C)
+   npm run dev
+   ```
+3. **Clear Next.js cache** if issues continue:
+   ```bash
+   rm -rf .next
+   npm run dev
+   ```
+4. **Use non-Turbo mode** as a fallback:
+   ```bash
+   npm run dev:no-turbo
+   ```
+
+### Common Issues
+
+#### "NEXT_PUBLIC_INSTANT_APP_ID is not set"
+- Verify `.env.local` exists in the root directory
+- Check the file contains: `NEXT_PUBLIC_INSTANT_APP_ID=e183332d-f1ca-469a-a705-d24f4f39eb12`
+- Restart the development server after creating/modifying `.env.local`
+
+#### Magic Code Not Received
+- Check spam/junk folder
+- Verify email delivery is configured in InstantDB dashboard
+- Wait a few minutes and try again
+- Check browser console for errors
+
+#### "Telegram account not found in campaign records"
+- Admin must upload CSV file first via `/admin/dashboard`
+- Ensure CSV contains the user's Telegram account
+- Verify CSV format is correct (oldUsername,telegramAccount,newUsername)
+
+#### Port 3000 Already in Use
+```bash
+# Kill the process using port 3000
+lsof -ti:3000 | xargs kill -9
+
+# Or use a different port
+PORT=3001 npm run dev
+```
+
+#### Build/Compilation Errors
+1. Delete `node_modules` and `package-lock.json`
+2. Run `npm install` again
+3. Clear Next.js cache: `rm -rf .next`
+4. Restart the development server
+
 ## 🆘 Support
 
 For issues or questions:
@@ -295,6 +364,7 @@ For issues or questions:
 2. Verify your InstantDB configuration
 3. Check the browser console for errors
 4. Review the API response messages
+5. See the Troubleshooting section above
 
 ---
 
