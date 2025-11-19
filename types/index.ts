@@ -31,6 +31,7 @@ export interface CSVRecord {
   telegramAccount: string;
   newUsername: string;
   createdAt: number;
+  uploadedBy?: string; // Email of the admin who uploaded the CSV (optional for backward compatibility)
 }
 
 export interface UserUpdate {
@@ -56,6 +57,7 @@ export const instantSchema = {
       telegramAccount: 'string',
       newUsername: 'string',
       createdAt: 'number',
+      uploadedBy: 'string',
     },
     user_updates: {
       oldUsername: 'string',

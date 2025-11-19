@@ -5,15 +5,54 @@ import { useRouter } from 'next/navigation';
 import { db, auth } from '@/lib/instantdb';
 import { id } from '@instantdb/react';
 import dynamic from 'next/dynamic';
-import CSVUpload from '@/components/CSVUpload';
-import AdminManagement from '@/components/AdminManagement';
+import ErrorBoundary from '@/components/ErrorBoundary';
+// Lazy load heavy components for better performance
+const CSVUpload = dynamic(() => import('@/components/CSVUpload'), {
+  loading: () => (
+    <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
+      <div className="h-8 w-32 bg-gray-800 rounded animate-pulse mb-4"></div>
+      <div className="h-64 bg-gray-800 rounded animate-pulse"></div>
+    </div>
+  ),
+});
+
+const AdminManagement = dynamic(() => import('@/components/AdminManagement'), {
+  loading: () => (
+    <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
+      <div className="h-8 w-40 bg-gray-800 rounded animate-pulse mb-4"></div>
+      <div className="h-48 bg-gray-800 rounded animate-pulse"></div>
+    </div>
+  ),
+});
+
+const UsernameUpdatesFeed = dynamic(() => import('@/components/UsernameUpdatesFeed'), {
+  loading: () => (
+    <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
+      <div className="h-8 w-48 bg-gray-800 rounded animate-pulse mb-4"></div>
+      <div className="space-y-3">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="h-20 bg-gray-800 rounded animate-pulse"></div>
+        ))}
+      </div>
+    </div>
+  ),
+});
+
+const AllUpdatedRecords = dynamic(() => import('@/components/AllUpdatedRecords'), {
+  loading: () => (
+    <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
+      <div className="h-8 w-40 bg-gray-800 rounded animate-pulse mb-4"></div>
+      <div className="h-64 bg-gray-800 rounded animate-pulse"></div>
+    </div>
+  ),
+});
 
 // Lazy load Analytics component with recharts (heavy library)
 const Analytics = dynamic(() => import('@/components/Analytics'), {
   loading: () => (
     <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
-      <h2 className="text-2xl font-bold mb-4">Analytics</h2>
-      <div className="text-center py-12 text-gray-400">Loading analytics...</div>
+      <div className="h-8 w-48 bg-gray-800 rounded animate-pulse mb-4"></div>
+      <div className="h-64 bg-gray-800 rounded animate-pulse"></div>
     </div>
   ),
   ssr: false, // Charts don't need SSR
@@ -29,12 +68,13 @@ export default function AdminDashboard() {
   const { data: adminData } = db.useQuery({ admin_users: {} });
   
   // Check if current user is a superadmin
-  const currentUserAdmin = adminData?.admin_users 
+  const adminUsersArray = adminData?.admin_users 
     ? (Array.isArray(adminData.admin_users) 
         ? adminData.admin_users 
         : Object.values(adminData.admin_users))
-        .find((admin: any) => admin.email?.toLowerCase() === user?.email?.toLowerCase())
-    : null;
+    : [];
+  const currentUserAdmin = (adminUsersArray as Array<{ email?: string; role?: string }>)
+    .find((admin) => admin.email?.toLowerCase() === user?.email?.toLowerCase()) || null;
   
   const isSuperAdmin = currentUserAdmin?.role === 'superadmin';
 
@@ -47,7 +87,7 @@ export default function AdminDashboard() {
         // Check if admin_users record exists for this user
         const adminUsers = adminData?.admin_users || {};
         const adminArray = Array.isArray(adminUsers) ? adminUsers : Object.values(adminUsers);
-        const userIsAdmin = adminArray.some((admin: any) => 
+        const userIsAdmin = adminArray.some((admin: { email?: string; role?: string }) => 
           admin.email?.toLowerCase() === user.email?.toLowerCase()
         );
         
@@ -72,12 +112,13 @@ export default function AdminDashboard() {
             console.log('Admin user record created successfully');
           }
         }
-      } catch (error: any) {
+      } catch (error) {
+        const errorObj = error instanceof Error ? error : new Error(String(error));
         if (process.env.NODE_ENV === 'development') {
-          console.error('Error creating admin user record:', error);
+          console.error('Error creating admin user record:', errorObj);
         }
         setAdminCreationError(
-          error?.message || 'Could not create admin record. You may need to set INSTANT_ADMIN_TOKEN and use the script.'
+          errorObj.message || 'Could not create admin record. You may need to set INSTANT_ADMIN_TOKEN and use the script.'
         );
       } finally {
         setAdminCheckDone(true);
@@ -123,7 +164,7 @@ export default function AdminDashboard() {
       // Still redirect even if logout fails
       router.push('/admin/login');
     }
-  }, [auth, router]);
+  }, [router]);
 
   // Show loading state while checking authentication
   if (isLoading) {
@@ -166,9 +207,27 @@ export default function AdminDashboard() {
         )}
 
         <div className="space-y-8">
-          {isSuperAdmin && <AdminManagement />}
-          <CSVUpload />
-          <Analytics />
+          <ErrorBoundary componentName="username updates feed">
+            <UsernameUpdatesFeed />
+          </ErrorBoundary>
+
+          {isSuperAdmin && (
+            <ErrorBoundary componentName="admin management">
+              <AdminManagement />
+            </ErrorBoundary>
+          )}
+
+          <ErrorBoundary componentName="CSV upload">
+            <CSVUpload />
+          </ErrorBoundary>
+
+          <ErrorBoundary componentName="analytics">
+            <Analytics />
+          </ErrorBoundary>
+
+          <ErrorBoundary componentName="updated records list">
+            <AllUpdatedRecords />
+          </ErrorBoundary>
         </div>
       </div>
     </div>

@@ -98,7 +98,9 @@ export default function CSVUpload() {
         });
 
         xhr.open('POST', '/api/csv/upload');
-        xhr.setRequestHeader('x-user-email', user.email);
+        if (user?.email) {
+          xhr.setRequestHeader('x-user-email', user.email);
+        }
         xhr.send(formData);
       });
 

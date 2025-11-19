@@ -11,12 +11,25 @@ import { CSVRow } from '@/types';
  * POST /api/csv/upload
  * Body: multipart/form-data with 'file' field containing CSV file
  */
+
+// Force dynamic rendering since this endpoint writes data and requires auth
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: NextRequest) {
   try {
     // Check admin authentication
     const authCheck = await requireAdminAuth(request);
     if (authCheck.error) {
       return authCheck.response;
+    }
+
+    // Get admin email from header (set by client)
+    const adminEmail = request.headers.get('x-user-email');
+    if (!adminEmail) {
+      return NextResponse.json(
+        { message: 'Admin email not provided in x-user-email header' },
+        { status: 400 }
+      );
     }
 
     // Parse form data
@@ -98,8 +111,8 @@ export async function POST(request: NextRequest) {
 
     if (parsedRows.length === 0) {
       // Log more details about why no rows were parsed (development only)
+      const lines = csvContent.trim().split(/\r?\n|\r/).filter(line => line.trim());
       if (process.env.NODE_ENV === 'development') {
-        const lines = csvContent.trim().split(/\r?\n|\r/).filter(line => line.trim());
         console.error('❌ No valid rows found:', {
           totalLines: lines.length,
           headerLine: lines[0],
@@ -135,9 +148,9 @@ export async function POST(request: NextRequest) {
       csvDataMap.set(normalizedAccount, row);
     }
 
-    // Store in InstantDB
+    // Store in InstantDB with admin email for scoping
     try {
-      await setCSVData(csvDataMap);
+      await setCSVData(csvDataMap, adminEmail);
     } catch (error) {
       if (process.env.NODE_ENV === 'development') {
         console.error('Error storing CSV data:', error);
@@ -164,6 +177,10 @@ export async function POST(request: NextRequest) {
       ...(duplicateAccounts.length > 0 && { 
         warnings: `Warning: ${duplicateAccounts.length} duplicate telegram account(s) found. Only the last occurrence was kept.`
       })
+    }, {
+      headers: {
+        'Cache-Control': 'private, no-cache, no-store, must-revalidate',
+      },
     });
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {

@@ -1,11 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { auth } from '@/lib/instantdb';
 
 export default function AdminLogin() {
-  const router = useRouter();
   const [email, setEmail] = useState('');
   const [magicCode, setMagicCode] = useState('');
   const [codeSent, setCodeSent] = useState(false);
@@ -23,7 +21,7 @@ export default function AdminLogin() {
         signInWithMagicCode: typeof auth?.signInWithMagicCode === 'function',
       });
     }
-  }, [auth]);
+  }, []);
 
   const handleSendCode = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,11 +39,12 @@ export default function AdminLogin() {
       await auth.sendMagicCode({ email: email.trim() });
       setCodeSent(true);
       setError('');
-    } catch (err: any) {
+    } catch (err) {
+      const errorObj = err instanceof Error ? err : new Error(String(err));
       if (process.env.NODE_ENV === 'development') {
-        console.error('Error sending magic code:', err);
+        console.error('Error sending magic code:', errorObj);
       }
-      setError(err?.message || 'Failed to send magic code. Please try again.');
+      setError(errorObj.message || 'Failed to send magic code. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -100,11 +99,14 @@ export default function AdminLogin() {
             console.warn('Could not create admin user record:', data.error);
           }
         }
-      } catch (err) {
+      } catch (adminCreationError) {
         // If admin creation fails (e.g., no admin token), that's okay
         // The user can still access the dashboard, but API routes will require admin_users record
         if (process.env.NODE_ENV === 'development') {
-          console.warn('Could not auto-create admin user record. You may need to add the user manually.');
+          const errorObj = adminCreationError instanceof Error
+            ? adminCreationError
+            : new Error(String(adminCreationError));
+          console.warn('Could not auto-create admin user record. You may need to add the user manually.', errorObj.message);
         }
       }
       
@@ -113,11 +115,12 @@ export default function AdminLogin() {
       }
       // Use window.location for a full page reload to ensure auth state is fresh
       window.location.href = '/admin/dashboard';
-    } catch (err: any) {
+    } catch (err) {
+      const errorObj = err instanceof Error ? err : new Error(String(err));
       if (process.env.NODE_ENV === 'development') {
-        console.error('❌ Login error:', err);
+        console.error('❌ Login error:', errorObj);
       }
-      setError(err?.message || 'Invalid magic code. Please try again.');
+      setError(errorObj.message || 'Invalid magic code. Please try again.');
       setIsLoading(false);
     }
   };

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, memo } from 'react';
+import { useState, useCallback } from 'react';
 import StepIndicator from './StepIndicator';
 import Step1Form from './Step1Form';
 import Step2Form from './Step2Form';
@@ -73,9 +73,9 @@ export default function UpdateFlow() {
       if (process.env.NODE_ENV === 'development') {
         console.error('❌ Error updating username:', error);
       }
-      const errorMessage = error instanceof Error ? error.message : 'Failed to update username. Please try again.';
+      const message = error instanceof Error ? error.message : 'Failed to update username. Please try again.';
       // Re-throw to let Step3Form handle the error display
-      throw error;
+      throw new Error(message);
     }
   };
 

@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { UserUpdateData } from '@/types';
-import { addUserUpdate, getUserUpdates, getCSVData } from '@/lib/storage';
+import { addUserUpdate, checkDuplicateUpdate, getCSVData } from '@/lib/storage';
+
+// Force dynamic rendering since this endpoint writes data
+export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
@@ -45,14 +48,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check for duplicate updates
-    const existingUpdates = await getUserUpdates();
-    const duplicate = existingUpdates.find(
-      u => u.telegramAccount.toLowerCase().replace('@', '') === normalizedAccount &&
-           u.newUsername === newUsername
-    );
+    // Check for duplicate updates using optimized function
+    const isDuplicate = await checkDuplicateUpdate(telegramAccount, newUsername);
 
-    if (duplicate) {
+    if (isDuplicate) {
       return NextResponse.json(
         { message: 'This update has already been submitted' },
         { status: 409 }
@@ -73,6 +72,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       message: 'Username updated successfully',
       data: updateRecord,
+    }, {
+      headers: {
+        'Cache-Control': 'private, no-cache, no-store, must-revalidate',
+      },
     });
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {

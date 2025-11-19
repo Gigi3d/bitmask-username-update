@@ -8,6 +8,10 @@ import { createAdminUser, getAdminUsers } from '@/lib/storage';
  * POST /api/admin/create
  * Body: { email: string, role?: 'admin' | 'superadmin' }
  */
+
+// Force dynamic rendering since this endpoint writes data and requires auth
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -49,7 +53,7 @@ export async function POST(request: NextRequest) {
             { status: 403 }
           );
         }
-      } catch (error) {
+      } catch {
         // If we can't verify, allow if admin token is set (for first admin creation)
         if (!process.env.INSTANT_ADMIN_TOKEN) {
           return NextResponse.json(

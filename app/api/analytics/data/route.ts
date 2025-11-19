@@ -1,11 +1,49 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { AnalyticsData } from '@/types';
-import { getUserUpdates } from '@/lib/storage';
+import { getUserUpdates, getCSVData, getAdminUsers } from '@/lib/storage';
 import { formatDate, getWeekStart } from '@/lib/utils';
+import { requireAdminAuth } from '@/lib/auth';
 
-export async function GET() {
+// Force dynamic rendering to support admin-specific filtering
+export const dynamic = 'force-dynamic';
+
+export async function GET(request: NextRequest) {
   try {
-    const updates = await getUserUpdates();
+    // Check admin authentication and get admin email
+    const authCheck = await requireAdminAuth(request);
+    if (authCheck.error) {
+      return authCheck.response;
+    }
+
+    const adminEmail = request.headers.get('x-user-email');
+    if (!adminEmail) {
+      return NextResponse.json(
+        { message: 'Admin email not provided' },
+        { status: 400 }
+      );
+    }
+
+    // Get all user updates
+    let updates = await getUserUpdates();
+
+    // Check if admin is superadmin
+    const admins = await getAdminUsers();
+    const currentAdmin = admins.find(
+      admin => admin.email.toLowerCase() === adminEmail.toLowerCase()
+    );
+    const isSuperAdmin = currentAdmin?.role === 'superadmin';
+
+    // If not superadmin, filter updates to only those matching their CSV records
+    if (!isSuperAdmin) {
+      const adminCSVData = await getCSVData(false, adminEmail);
+      const adminTelegramAccounts = new Set(adminCSVData.keys());
+      
+      // Filter updates to only include those matching admin's CSV records
+      updates = updates.filter(update => {
+        const normalizedAccount = update.telegramAccount.toLowerCase().replace('@', '');
+        return adminTelegramAccounts.has(normalizedAccount);
+      });
+    }
 
     // Calculate total updates
     const totalUpdates = updates.length;

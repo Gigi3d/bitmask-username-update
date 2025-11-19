@@ -7,6 +7,11 @@ import { getCSVData } from '@/lib/storage';
  * POST /api/users/verify-old-username
  * Body: { oldUsername: string }
  */
+
+// Allow caching since this is a read-only verification endpoint
+export const dynamic = 'force-dynamic';
+export const revalidate = 60;
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -45,6 +50,10 @@ export async function POST(request: NextRequest) {
         details: process.env.NODE_ENV === 'development' 
           ? `Searched ${csvData.size} records in the database.`
           : undefined
+      }, {
+        headers: {
+          'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+        },
       });
     }
 
@@ -55,6 +64,10 @@ export async function POST(request: NextRequest) {
       telegramAccounts: matchingRecords.map(r => r.telegramAccount),
       // Include count for reference
       matchCount: matchingRecords.length,
+    }, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+      },
     });
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {

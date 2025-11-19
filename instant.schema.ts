@@ -24,6 +24,7 @@ const _schema = i.schema({
       telegramAccount: i.string(),
       newUsername: i.string(),
       createdAt: i.number(),
+      uploadedBy: i.string().optional(), // Email of the admin who uploaded the CSV (optional for backward compatibility)
     }),
     user_updates: i.entity({
       oldUsername: i.string(),

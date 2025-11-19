@@ -148,7 +148,7 @@ export default function AdminManagement() {
           <p className="text-gray-400 text-sm">No admins found.</p>
         ) : (
           <div className="space-y-2">
-            {currentAdmins.map((admin: any) => (
+            {(currentAdmins as Array<{ id: string; email?: string; role?: string; createdAt?: number }>).map((admin) => (
               <div
                 key={admin.id}
                 className="bg-gray-800 border border-gray-700 rounded-lg p-3 flex justify-between items-center"

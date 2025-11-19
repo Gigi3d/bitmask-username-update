@@ -13,8 +13,38 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Bitmask Username Update",
+  title: {
+    default: "Bitmask Username Update",
+    template: "%s | Bitmask Username Update",
+  },
   description: "Update your Bitmask username for mainnet",
+  keywords: ["Bitmask", "username", "update", "mainnet"],
+  authors: [{ name: "Bitmask" }],
+  creator: "Bitmask",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://bitmask.app'),
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    siteName: "Bitmask Username Update",
+    title: "Bitmask Username Update",
+    description: "Update your Bitmask username for mainnet",
+  },
+  twitter: {
+    card: "summary",
+    title: "Bitmask Username Update",
+    description: "Update your Bitmask username for mainnet",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
 };
 
 export default function RootLayout({

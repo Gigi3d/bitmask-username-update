@@ -1,54 +1,73 @@
-import { CSVRow, UserUpdateData, CSVRecord, UserUpdate, AdminUserRecord } from '@/types';
 import { getAdminDb } from './instantdb';
 import { id } from '@instantdb/admin';
+import { CSVRow, UserUpdateData, CSVRecord, UserUpdate, AdminUserRecord } from '@/types';
 
-// Server-side functions using InstantDB Admin SDK
-
-// Cache for CSV data with TTL
-let csvDataCache: { data: Map<string, CSVRow>; timestamp: number } | null = null;
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+// Type for InstantDB query results (dynamic structure)
+type InstantDBQueryResult = {
+  [key: string]: unknown;
+};
 
 /**
- * Get all CSV records from InstantDB
- * Returns a Map keyed by normalized telegram account
- * Uses in-memory cache with TTL to reduce database queries
+ * Storage functions for InstantDB operations
+ * All functions use the admin database instance for server-side operations
  */
-export async function getCSVData(forceRefresh: boolean = false): Promise<Map<string, CSVRow>> {
-  // Return cached data if still valid and not forcing refresh
-  const now = Date.now();
-  if (!forceRefresh && csvDataCache && (now - csvDataCache.timestamp) < CACHE_TTL) {
-    return csvDataCache.data;
-  }
 
+/**
+ * Get CSV data from InstantDB
+ * @param includeAll - If true, returns all CSV records. If false, filters by adminEmail
+ * @param adminEmail - Optional admin email to filter CSV records
+ * @returns Map of normalized telegram account -> CSVRow
+ */
+export async function getCSVData(includeAll: boolean = true, adminEmail?: string): Promise<Map<string, CSVRow>> {
+  const db = getAdminDb();
+  
   try {
-    const db = getAdminDb();
-    const result = await db.query({ csv_records: {} });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const query: any = { csv_records: {} };
+    const result = await db.query(query) as InstantDBQueryResult;
     
-    const csvData = new Map<string, CSVRow>();
-    
-    if (result?.csv_records) {
-      const records = Array.isArray(result.csv_records) ? result.csv_records : Object.values(result.csv_records);
-      for (const record of records) {
-        const typedRecord = record as CSVRecord;
-        const normalizedAccount = typedRecord.telegramAccount.toLowerCase().replace('@', '');
-        csvData.set(normalizedAccount, {
-          oldUsername: typedRecord.oldUsername,
-          telegramAccount: typedRecord.telegramAccount,
-          newUsername: typedRecord.newUsername,
-        });
-      }
+    if (!result?.csv_records) {
+      return new Map();
     }
     
-    // Update cache
-    csvDataCache = {
-      data: csvData,
-      timestamp: now,
-    };
+    const records = Array.isArray(result.csv_records)
+      ? result.csv_records
+      : Object.values(result.csv_records) as CSVRecord[];
     
-    return csvData;
+    const csvMap = new Map<string, CSVRow>();
+    
+    for (const record of records) {
+      // Type guard: ensure required fields exist
+      if (!record.telegramAccount || !record.oldUsername) {
+        continue;
+      }
+      
+      // Filter by admin email if specified and includeAll is false
+      if (!includeAll && adminEmail) {
+        const uploadedBy = typeof record.uploadedBy === 'string' ? record.uploadedBy : undefined;
+        if (uploadedBy?.toLowerCase() !== adminEmail.toLowerCase()) {
+          continue;
+        }
+      }
+      
+      // Normalize telegram account for map key
+      const telegramAccount = typeof record.telegramAccount === 'string' ? record.telegramAccount : '';
+      const oldUsername = typeof record.oldUsername === 'string' ? record.oldUsername : '';
+      const newUsername = typeof record.newUsername === 'string' ? record.newUsername : '';
+      
+      const normalizedAccount = telegramAccount.toLowerCase().replace('@', '');
+      
+      csvMap.set(normalizedAccount, {
+        oldUsername,
+        telegramAccount,
+        newUsername,
+      });
+    }
+    
+    return csvMap;
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {
-      console.error('Error fetching CSV data from InstantDB:', error);
+      console.error('Error fetching CSV data:', error);
     }
     throw new Error('Failed to fetch CSV data');
   }
@@ -56,143 +75,302 @@ export async function getCSVData(forceRefresh: boolean = false): Promise<Map<str
 
 /**
  * Set CSV data in InstantDB
- * Replaces all existing CSV records with new ones
+ * Replaces all existing CSV records for the given admin email
+ * @param csvData - Map of normalized telegram account -> CSVRow
+ * @param adminEmail - Email of the admin who uploaded the CSV
  */
-export async function setCSVData(data: Map<string, CSVRow>): Promise<void> {
+export async function setCSVData(csvData: Map<string, CSVRow>, adminEmail: string): Promise<void> {
+  const db = getAdminDb();
+  
   try {
-    const db = getAdminDb();
+    // First, delete all existing CSV records for this admin
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const query: any = { csv_records: {} };
+    const existingResult = await db.query(query) as InstantDBQueryResult;
     
-    // First, get all existing records to delete them
-    const existingResult = await db.query({ csv_records: {} });
-    
-    // Build transaction chunks
-    const txChunks: any[] = [];
-    
-    // Delete all existing records
     if (existingResult?.csv_records) {
-      const existingRecords = Array.isArray(existingResult.csv_records) 
-        ? existingResult.csv_records 
-        : Object.values(existingResult.csv_records);
-      for (const record of existingRecords) {
-        const typedRecord = record as CSVRecord;
-        txChunks.push(db.tx.csv_records[typedRecord.id].delete());
+      const existingRecords = Array.isArray(existingResult.csv_records)
+        ? existingResult.csv_records
+        : Object.values(existingResult.csv_records) as CSVRecord[];
+      
+      // Filter to only records uploaded by this admin
+      const adminRecords = existingRecords.filter(
+        record => {
+          const uploadedBy = typeof record.uploadedBy === 'string' ? record.uploadedBy : undefined;
+          return uploadedBy?.toLowerCase() === adminEmail.toLowerCase();
+        }
+      );
+      
+      // Delete existing records for this admin
+      if (adminRecords.length > 0) {
+        const deleteOps = adminRecords.map(record =>
+          db.tx.csv_records[record.id].delete()
+        );
+        await db.transact(deleteOps);
       }
     }
     
     // Create new records
     const now = Date.now();
-    for (const row of data.values()) {
+    const createOps = Array.from(csvData.values()).map(row => {
       const recordId = id();
-      txChunks.push(db.tx.csv_records[recordId].create({
+      return db.tx.csv_records[recordId].create({
         oldUsername: row.oldUsername,
         telegramAccount: row.telegramAccount,
         newUsername: row.newUsername,
         createdAt: now,
-      }));
+        uploadedBy: adminEmail,
+      });
+    });
+    
+    if (createOps.length > 0) {
+      await db.transact(createOps);
     }
-    
-    await db.transact(txChunks);
-    
-    // Invalidate cache after updating CSV data
-    csvDataCache = null;
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {
-      console.error('Error setting CSV data in InstantDB:', error);
+      console.error('Error setting CSV data:', error);
     }
-    throw new Error('Failed to save CSV data');
+    throw new Error('Failed to store CSV data');
+  }
+}
+
+/**
+ * Add a user update to InstantDB
+ * @param updateData - User update data
+ */
+export async function addUserUpdate(updateData: UserUpdateData): Promise<void> {
+  const db = getAdminDb();
+  
+  try {
+    const recordId = id();
+    const submittedAt = typeof updateData.submittedAt === 'string'
+      ? new Date(updateData.submittedAt).getTime()
+      : updateData.submittedAt;
+    
+    await db.transact([
+      db.tx.user_updates[recordId].create({
+        oldUsername: updateData.oldUsername,
+        telegramAccount: updateData.telegramAccount,
+        newUsername: updateData.newUsername,
+        submittedAt: submittedAt,
+      })
+    ]);
+  } catch (error) {
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Error adding user update:', error);
+    }
+    throw new Error('Failed to add user update');
+  }
+}
+
+/**
+ * Check if a duplicate update already exists
+ * @param telegramAccount - Telegram account to check
+ * @param newUsername - New username to check
+ * @returns true if duplicate exists, false otherwise
+ */
+export async function checkDuplicateUpdate(telegramAccount: string, newUsername: string): Promise<boolean> {
+  const db = getAdminDb();
+  
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const query: any = { user_updates: {} };
+    const result = await db.query(query) as InstantDBQueryResult;
+    
+    if (!result?.user_updates) {
+      return false;
+    }
+    
+    const updates = Array.isArray(result.user_updates)
+      ? result.user_updates
+      : Object.values(result.user_updates) as UserUpdate[];
+    
+    const normalizedAccount = telegramAccount.toLowerCase().replace('@', '');
+    
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return updates.some((update: any) => {
+      const updateTelegramAccount = typeof update.telegramAccount === 'string' ? update.telegramAccount : '';
+      const updateNewUsername = typeof update.newUsername === 'string' ? update.newUsername : '';
+      const updateAccount = updateTelegramAccount.toLowerCase().replace('@', '');
+      return updateAccount === normalizedAccount && updateNewUsername === newUsername;
+    });
+  } catch (error) {
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Error checking duplicate update:', error);
+    }
+    // On error, assume no duplicate (fail open)
+    return false;
   }
 }
 
 /**
  * Get all user updates from InstantDB
+ * @returns Array of UserUpdate objects
  */
-export async function getUserUpdates(): Promise<UserUpdateData[]> {
+export async function getUserUpdates(): Promise<UserUpdate[]> {
+  const db = getAdminDb();
+  
   try {
-    const db = getAdminDb();
-    const result = await db.query({ user_updates: {} });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const query: any = { user_updates: {} };
+    const result = await db.query(query) as InstantDBQueryResult;
     
     if (!result?.user_updates) {
       return [];
     }
     
-    const updates = Array.isArray(result.user_updates) 
-      ? result.user_updates 
+    const rawUpdates = Array.isArray(result.user_updates)
+      ? result.user_updates
       : Object.values(result.user_updates);
     
-    return updates.map((update) => {
-      const typedUpdate = update as UserUpdate;
-      return {
-        oldUsername: typedUpdate.oldUsername,
-        telegramAccount: typedUpdate.telegramAccount,
-        newUsername: typedUpdate.newUsername,
-        submittedAt: new Date(typedUpdate.submittedAt).toISOString(),
-      };
-    });
+    // Map and validate the updates to ensure they match UserUpdate type
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const updates: UserUpdate[] = rawUpdates
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .filter((update: any): update is UserUpdate => {
+        return (
+          update &&
+          typeof update.id === 'string' &&
+          typeof update.oldUsername === 'string' &&
+          typeof update.telegramAccount === 'string' &&
+          typeof update.newUsername === 'string' &&
+          typeof update.submittedAt === 'number'
+        );
+      })
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .map((update: any) => ({
+        id: update.id,
+        oldUsername: update.oldUsername,
+        telegramAccount: update.telegramAccount,
+        newUsername: update.newUsername,
+        submittedAt: update.submittedAt,
+      }));
+    
+    return updates;
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {
-      console.error('Error fetching user updates from InstantDB:', error);
+      console.error('Error fetching user updates:', error);
     }
     throw new Error('Failed to fetch user updates');
   }
 }
 
 /**
- * Add a user update to InstantDB
- */
-export async function addUserUpdate(update: UserUpdateData): Promise<void> {
-  try {
-    const db = getAdminDb();
-    const recordId = id();
-    const submittedAt = new Date(update.submittedAt).getTime();
-    
-    await db.transact([
-      db.tx.user_updates[recordId].create({
-        oldUsername: update.oldUsername,
-        telegramAccount: update.telegramAccount,
-        newUsername: update.newUsername,
-        submittedAt: submittedAt,
-      })
-    ]);
-  } catch (error) {
-    if (process.env.NODE_ENV === 'development') {
-      console.error('Error adding user update to InstantDB:', error);
-    }
-    throw new Error('Failed to save user update');
-  }
-}
-
-/**
  * Get all admin users from InstantDB
+ * @returns Array of AdminUserRecord objects
  */
 export async function getAdminUsers(): Promise<AdminUserRecord[]> {
+  const db = getAdminDb();
+  
   try {
-    const db = getAdminDb();
-    const result = await db.query({ admin_users: {} });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const query: any = { admin_users: {} };
+    const result = await db.query(query) as InstantDBQueryResult;
     
     if (!result?.admin_users) {
       return [];
     }
     
-    const admins = Array.isArray(result.admin_users) 
-      ? result.admin_users 
+    const rawAdmins = Array.isArray(result.admin_users)
+      ? result.admin_users
       : Object.values(result.admin_users);
     
-    return admins.map((admin) => admin as AdminUserRecord);
+    // Map and validate the admins to ensure they match AdminUserRecord type
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const admins: AdminUserRecord[] = rawAdmins
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .filter((admin: any): admin is AdminUserRecord => {
+        return (
+          admin &&
+          typeof admin.id === 'string' &&
+          typeof admin.email === 'string' &&
+          typeof admin.role === 'string' &&
+          typeof admin.createdAt === 'number'
+        );
+      })
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .map((admin: any) => ({
+        id: admin.id,
+        email: admin.email,
+        role: admin.role as 'admin' | 'superadmin',
+        createdAt: admin.createdAt,
+      }));
+    
+    return admins;
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {
-      console.error('Error fetching admin users from InstantDB:', error);
+      console.error('Error fetching admin users:', error);
     }
     throw new Error('Failed to fetch admin users');
   }
 }
 
 /**
- * Check if an admin user exists by email
+ * Create an admin user in InstantDB
+ * @param email - Admin email address
+ * @param role - Admin role ('admin' or 'superadmin')
+ * @param checkExisting - Whether to check if admin already exists (default: true)
+ * @throws Error if admin already exists and checkExisting is true
+ */
+export async function createAdminUser(
+  email: string,
+  role: 'admin' | 'superadmin',
+  checkExisting: boolean = true
+): Promise<void> {
+  const db = getAdminDb();
+  
+  try {
+    // Check if admin already exists
+    if (checkExisting) {
+      const existingAdmins = await getAdminUsers();
+      const exists = existingAdmins.some(
+        admin => {
+          const adminEmail = typeof admin.email === 'string' ? admin.email : '';
+          return adminEmail.toLowerCase() === email.toLowerCase();
+        }
+      );
+      
+      if (exists) {
+        throw new Error(`Admin user with email ${email} already exists`);
+      }
+    }
+    
+    // Create admin user
+    const recordId = id();
+    const now = Date.now();
+    
+    await db.transact([
+      db.tx.admin_users[recordId].create({
+        email: email.toLowerCase().trim(),
+        role: role,
+        createdAt: now,
+      })
+    ]);
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('already exists')) {
+      throw error;
+    }
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Error creating admin user:', error);
+    }
+    throw new Error('Failed to create admin user');
+  }
+}
+
+/**
+ * Check if an admin user exists
+ * @param email - Email address to check
+ * @returns true if admin exists, false otherwise
  */
 export async function adminUserExists(email: string): Promise<boolean> {
   try {
     const admins = await getAdminUsers();
-    return admins.some(admin => admin.email.toLowerCase() === email.toLowerCase());
+    return admins.some(
+      admin => {
+        const adminEmail = typeof admin.email === 'string' ? admin.email : '';
+        return adminEmail.toLowerCase() === email.toLowerCase();
+      }
+    );
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {
       console.error('Error checking admin user existence:', error);
@@ -200,62 +378,3 @@ export async function adminUserExists(email: string): Promise<boolean> {
     return false;
   }
 }
-
-/**
- * Create an admin user in InstantDB
- */
-export async function createAdminUser(email: string, role: 'admin' | 'superadmin' = 'admin', skipExistenceCheck: boolean = false): Promise<void> {
-  try {
-    const db = getAdminDb();
-    
-    // Check if admin already exists (skip if admin token is not available)
-    if (!skipExistenceCheck) {
-      try {
-        const exists = await adminUserExists(email);
-        if (exists) {
-          throw new Error(`Admin user with email ${email} already exists`);
-        }
-      } catch (checkError) {
-        // If existence check fails (e.g., no admin token), skip it and proceed
-        // This allows first admin creation without admin token
-        if (process.env.NODE_ENV === 'development') {
-          console.warn('Could not check if admin user exists, proceeding with creation...');
-        }
-      }
-    }
-    
-    const recordId = id();
-    const now = Date.now();
-    
-    // Use asUser if we have the email but no admin token (for first admin creation)
-    try {
-      await db.transact([
-        db.tx.admin_users[recordId].create({
-          email: email.toLowerCase().trim(),
-          role: role,
-          createdAt: now,
-        })
-      ]);
-    } catch (transactError: any) {
-      // If transaction fails due to admin token, try using client-side approach
-      // This is a fallback for first admin creation
-      if (transactError?.message?.includes('Admin token') || transactError?.message?.includes('token')) {
-        if (process.env.NODE_ENV === 'development') {
-          console.warn('Admin token not available. Attempting alternative method...');
-        }
-        // For now, re-throw the error with a helpful message
-        throw new Error('Admin token required. Please set INSTANT_ADMIN_TOKEN in .env.local or use the script: npm run add-root-admin');
-      }
-      throw transactError;
-    }
-  } catch (error) {
-    if (process.env.NODE_ENV === 'development') {
-      console.error('Error creating admin user in InstantDB:', error);
-    }
-    if (error instanceof Error) {
-      throw error;
-    }
-    throw new Error('Failed to create admin user');
-  }
-}
-
