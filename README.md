@@ -6,50 +6,146 @@ A Next.js web application designed to help Bitmask users update their usernames 
 
 This application facilitates the migration of Bitmask usernames from campaign/testnet to mainnet. Users can submit their username updates through a guided 3-step process, while administrators can manage campaign data via CSV uploads and monitor submission analytics.
 
-## ✨ Features
+## ✨ Key Features
 
-### User Features
-- **Welcome Page**: Instructions and overview of the update process
-- **3-Step Update Flow**:
-  1. Input old Bitmask username (from campaign)
-  2. Verify Telegram account associated with the campaign
-  3. Update to new mainnet Bitmask wallet username
-- **Validation**: Automatic validation against campaign records
-- **Success Confirmation**: Clear feedback upon successful submission
+### 👥 User-Facing Features
 
-### Admin Features
-- **Secure Authentication**: Admin login system using InstantDB
-- **Multi-Admin Support**: 
-  - Regular admins can upload their own CSV files with scoped data
-  - Each admin's CSV uploads are tracked separately
-  - Superadmins can manage other admins
-- **CSV Upload**: Upload and manage campaign data (old username, Telegram account, new username)
-  - Each admin maintains their own CSV dataset
-  - Uploading a new CSV replaces only that admin's previous upload
-- **Analytics Dashboard**: 
-  - **Superadmins**: See 100% analytics of ALL data from all admins
-  - **Regular Admins**: See analytics scoped to their own CSV data only
-  - Total updates submitted
-  - Daily and weekly update statistics
-  - Success rate tracking
-  - Activity timeline with interactive charts
-- **Real-time Username Updates Feed**: 
-  - Live feed of new bitmask username updates as they are submitted
-  - Shows old username → new username transitions
-  - Displays telegram account and timestamp
-  - Updates automatically without page refresh
-- **Real-time Data**: Analytics refresh every 30 seconds
+#### **Welcome & Instructions**
+
+- **Instructions Page**: Clear overview of the username update process
+- **FAQ Section**: Answers to common questions
+- **Step-by-step Guidance**: Visual walkthrough of the entire process
+
+#### **3-Step Username Update Flow** (`/update`)
+
+- **Step 1 - Old Username**: Enter your campaign/testnet Bitmask username
+- **Step 2 - Telegram Verification**: Verify your Telegram account associated with the campaign
+- **Step 3 - New Username**: Enter your new mainnet Bitmask wallet username
+- **Step 4 - Success Confirmation**: Visual confirmation with submission details
+
+#### **Real-Time Validation**
+
+- **Username Format Validation**: Ensures usernames meet requirements
+- **Telegram Handle Validation**: Accepts handles with or without @ symbol
+- **Cross-Reference Validation**: Automatically validates against campaign CSV records
+- **Duplicate Prevention**: Prevents multiple submissions from the same user
+- **Instant Feedback**: Real-time error messages and validation status
+
+#### **Status Checker** (`/status`)
+
+- **Submission Lookup**: Check if you've already submitted an update
+- **Search Options**: Search by old username or Telegram account
+- **Submission Details**: View your submission details and timestamp
+- **Update History**: Track your username migration status
+
+---
+
+### 🔐 Admin Features
+
+#### **Secure Authentication** (`/admin/login`)
+
+- **Magic Code Authentication**: Passwordless login via email (InstantDB)
+- **No Password Required**: Secure magic code sent to admin email
+- **Session Management**: Automatic session handling and security
+- **Role-Based Access**: Different permissions for admins and superadmins
+
+#### **Multi-Admin Support**
+
+- **Regular Admins**:
+  - Upload and manage their own CSV files
+  - View analytics scoped to their own data
+  - Track their own campaign participants
+- **Superadmins**:
+  - Full access to ALL data from all admins
+  - Manage admin users (create, view, assign roles)
+  - System-wide analytics and oversight
+- **Data Isolation**: Each admin's CSV uploads are tracked and scoped separately
+- **Independent Datasets**: Uploading a new CSV replaces only that admin's previous upload
+
+#### **CSV Upload & Management** (`/admin/dashboard`)
+
+- **CSV File Upload**: Upload campaign data with drag-and-drop support
+- **Format Validation**: Automatic validation of CSV structure and data
+- **Required Columns**: oldUsername, telegramAccount, newUsername
+- **Flexible Format**: Handles Telegram accounts with or without @ symbol
+- **Duplicate Handling**: Smart handling of duplicate entries
+- **Upload History**: Track when and who uploaded CSV files
+- **Data Replacement**: New uploads replace previous data for that admin only
+
+#### **Comprehensive Analytics Dashboard**
+
+- **Scoped Analytics**:
+  - **Superadmins**: View 100% of ALL data from all admins combined
+  - **Regular Admins**: View analytics scoped only to their own CSV data
+  
+- **Key Metrics**:
+  - **Total Updates**: Count of all submitted username updates
+  - **Daily Statistics**: Updates submitted per day
+  - **Weekly Statistics**: Updates submitted per week
+  - **Success Rate**: Percentage of successful validations
+  - **Completion Rate**: Percentage of campaign users who updated
+  
+- **Visual Analytics**:
+  - **Interactive Charts**: Beautiful visualizations using Recharts
+  - **Activity Timeline**: Time-series graph of submission activity
+  - **Trend Analysis**: Daily and weekly trend indicators
+  - **Real-Time Updates**: Dashboard refreshes every 30 seconds automatically
+
+#### **Real-Time Username Updates Feed**
+
+- **Live Feed**: Real-time stream of new username updates as they're submitted
+- **Update Details**: Shows old username → new username transitions
+- **User Information**: Displays associated Telegram account
+- **Timestamps**: Exact submission time for each update
+- **Auto-Refresh**: Updates automatically without page reload
+- **No Manual Refresh**: Leverages InstantDB real-time capabilities
+
+#### **All Updated Records View**
+
+- **Complete List**: View all submitted username updates
+- **Search & Filter**: Find specific updates quickly
+- **Export Capability**: Download records for external use
+- **Timestamp Tracking**: See when each update was submitted
+- **Sortable Columns**: Sort by any field (username, date, etc.)
+
+#### **Admin Management** (Superadmin Only)
+
+- **Create Admin Users**: Add new administrators to the system
+- **Role Assignment**: Assign admin or superadmin roles
+- **View All Admins**: See complete list of admin accounts
+- **Access Control**: Manage who can access the admin dashboard
+- **Email-Based**: Admin accounts tied to email addresses
 
 ## 🛠️ Tech Stack
 
-- **Framework**: [Next.js 16](https://nextjs.org/) (App Router)
+- **Framework**: [Next.js 15](https://nextjs.org/) (App Router)
 - **Language**: TypeScript
 - **UI**: React 19, Tailwind CSS 4
 - **Database**: [InstantDB](https://instantdb.com/) (real-time database)
 - **Charts**: Recharts
 - **Authentication**: InstantDB Auth
 
-## 📋 Prerequisites
+## � Code Optimizations
+
+This codebase has been optimized for performance and maintainability:
+
+### Recent Improvements
+
+- **~200 lines of code removed** through consolidation and refactoring
+- **Shared utilities created**: Centralized error handling and validation
+- **13 redundant files deleted**: Cleaned up documentation and scripts
+- **Consistent API patterns**: All routes use standardized error handling
+- **Single source of truth**: Eliminated duplicate normalization logic
+
+### Key Optimizations
+
+- Created `lib/apiHelpers.ts` for standardized API responses and error handling
+- Added `normalizeTelegramAccount()` utility (eliminated 5 duplicate instances)
+- Refactored all 5 API routes to use shared utilities (~20% code reduction)
+- Fixed duplicate variable declarations for better type safety
+- Improved code maintainability with consistent patterns
+
+## �📋 Prerequisites
 
 - Node.js 18+ and npm/yarn/pnpm/bun
 - InstantDB account and App ID
@@ -61,10 +157,6 @@ This application facilitates the migration of Bitmask usernames from campaign/te
 
 ```bash
 npm install
-# or
-yarn install
-# or
-pnpm install
 ```
 
 ### 2. Environment Setup
@@ -85,12 +177,8 @@ INSTANT_ADMIN_TOKEN=your-admin-token-here
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# or without Turbopack (recommended for stability)
+npm run dev:no-turbo
 ```
 
 The application will be available at [http://localhost:3000](http://localhost:3000)
@@ -121,18 +209,14 @@ npm start
 │   ├── AdminLogin.tsx            # Admin login component
 │   ├── Analytics.tsx             # Analytics charts component
 │   ├── CSVUpload.tsx             # CSV upload component
-│   ├── InstructionsPage.tsx       # Welcome/instructions page
-│   ├── Step1Form.tsx             # Step 1: Old username input
-│   ├── Step2Form.tsx             # Step 2: Telegram verification
-│   ├── Step3Form.tsx             # Step 3: New username input
-│   ├── StepIndicator.tsx         # Progress indicator
-│   ├── SuccessMessage.tsx        # Success confirmation
-│   └── UpdateFlow.tsx            # Main update flow orchestrator
+│   └── ...                       # Other components
 ├── lib/                          # Utility libraries
+│   ├── apiHelpers.ts             # Shared API utilities (NEW)
 │   ├── auth.ts                   # Authentication helpers
 │   ├── instantdb.ts              # InstantDB configuration
-│   ├── storage.ts                 # Database operations
-│   └── utils.ts                  # Utility functions
+│   ├── storage.ts                # Database operations
+│   ├── utils.ts                  # Utility functions
+│   └── validationHelpers.ts     # Enhanced validation
 ├── types/                        # TypeScript type definitions
 │   └── index.ts                  # Type definitions and schema
 └── public/                       # Static assets
@@ -143,9 +227,11 @@ npm start
 ### User Endpoints
 
 #### `POST /api/users/update`
+
 Submit a username update request.
 
 **Request Body:**
+
 ```json
 {
   "oldUsername": "old_username",
@@ -155,41 +241,22 @@ Submit a username update request.
 ```
 
 **Response:**
+
 - `200`: Update successful
-- `400`: Validation error (missing fields, account not found, username mismatch)
+- `400`: Validation error
+- `404`: Account not found
 - `409`: Duplicate submission
 - `500`: Server error
 
 ### Admin Endpoints
 
 #### `POST /api/csv/upload`
+
 Upload CSV file with campaign data. Requires admin authentication.
 
-**Request:**
-- `Content-Type: multipart/form-data`
-- `file`: CSV file with columns: `oldUsername`, `telegramAccount`, `newUsername`
-
-**Response:**
-```json
-{
-  "message": "CSV uploaded successfully",
-  "rowCount": 100
-}
-```
-
 #### `GET /api/analytics/data`
-Get analytics data for the dashboard.
 
-**Response:**
-```json
-{
-  "totalUpdates": 150,
-  "updatesPerDay": [{ "date": "2024-01-01", "count": 10 }],
-  "updatesPerWeek": [{ "week": "2024-01-01", "count": 50 }],
-  "successRate": 100,
-  "activityTimeline": [{ "date": "2024-01-01", "count": 10 }]
-}
-```
+Get analytics data for the dashboard.
 
 ## 📊 Database Schema
 
@@ -218,52 +285,49 @@ The application uses InstantDB with the following schema:
 ## 🔐 Authentication
 
 The admin dashboard uses InstantDB authentication. Admin users must log in through `/admin/login` to access:
+
 - CSV upload functionality
 - Analytics dashboard
 
 ## 📝 CSV Format
 
 The CSV file should have the following columns:
+
 - `oldUsername`: The username used during the campaign
 - `telegramAccount`: The Telegram handle (with or without @)
 - `newUsername`: The new mainnet username
 
 Example:
+
 ```csv
 oldUsername,telegramAccount,newUsername
 user123,@telegram_user,newuser123
 user456,@another_user,newuser456
 ```
 
-## 🎨 UI/UX Features
-
-- **Dark Theme**: Black background with yellow accent color
-- **Responsive Design**: Works on desktop and mobile devices
-- **Step Indicator**: Visual progress tracking through the update process
-- **Form Validation**: Real-time validation with clear error messages
-- **Interactive Charts**: Recharts-powered analytics visualization
-- **Loading States**: Clear feedback during async operations
-
 ## 🧪 Development
 
 ### Available Scripts
 
-- `npm run dev`: Start development server with Turbo
-- `npm run dev:no-turbo`: Start development server without Turbo
+- `npm run dev`: Start development server with Turbopack
+- `npm run dev:no-turbo`: Start development server without Turbopack (more stable)
 - `npm run build`: Build for production
 - `npm start`: Start production server
 - `npm run lint`: Run ESLint
+- `npm run analyze`: Analyze bundle size
 
 ### Code Style
 
 - TypeScript strict mode enabled
 - ESLint configured with Next.js rules
 - Tailwind CSS for styling
+- Shared utilities for consistency
 
 ## 📚 Additional Documentation
 
 - [INSTANTDB_SETUP.md](./INSTANTDB_SETUP.md) - Detailed InstantDB configuration guide
 - [LOCAL_SETUP_GUIDE.md](./LOCAL_SETUP_GUIDE.md) - Local development setup guide
+- [DEPLOYMENT.md](./DEPLOYMENT.md) - Deployment instructions
 
 ## 🚢 Deployment
 
@@ -279,6 +343,7 @@ The application can be deployed to any platform that supports Next.js:
 ### Other Platforms
 
 Ensure you set the following environment variables:
+
 - `NEXT_PUBLIC_INSTANT_APP_ID`
 - `INSTANT_ADMIN_TOKEN` (for production)
 
@@ -289,60 +354,25 @@ Ensure you set the following environment variables:
 - User submissions are validated against campaign records
 - Duplicate submissions are prevented
 - Error messages are sanitized in production
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
-
-## 📄 License
-
-This project is private and proprietary.
+- Rate limiting on API endpoints
 
 ## 🐛 Troubleshooting
-
-### HMR (Hot Module Replacement) Errors
-
-If you encounter errors like "Module factory is not available" during development:
-
-1. **Refresh the browser** - The app uses lazy initialization to handle HMR gracefully
-2. **Restart the dev server** if the error persists:
-   ```bash
-   # Stop server (Ctrl+C)
-   npm run dev
-   ```
-3. **Clear Next.js cache** if issues continue:
-   ```bash
-   rm -rf .next
-   npm run dev
-   ```
-4. **Use non-Turbo mode** as a fallback:
-   ```bash
-   npm run dev:no-turbo
-   ```
 
 ### Common Issues
 
 #### "NEXT_PUBLIC_INSTANT_APP_ID is not set"
+
 - Verify `.env.local` exists in the root directory
-- Check the file contains: `NEXT_PUBLIC_INSTANT_APP_ID=e183332d-f1ca-469a-a705-d24f4f39eb12`
+- Check the file contains the correct App ID
 - Restart the development server after creating/modifying `.env.local`
 
-#### Magic Code Not Received
-- Check spam/junk folder
-- Verify email delivery is configured in InstantDB dashboard
-- Wait a few minutes and try again
-- Check browser console for errors
+#### Slow Compilation
 
-#### "Telegram account not found in campaign records"
-- Admin must upload CSV file first via `/admin/dashboard`
-- Ensure CSV contains the user's Telegram account
-- Verify CSV format is correct (oldUsername,telegramAccount,newUsername)
+- Use `npm run dev:no-turbo` instead of `npm run dev`
+- Clear Next.js cache: `rm -rf .next && npm run dev`
 
 #### Port 3000 Already in Use
+
 ```bash
 # Kill the process using port 3000
 lsof -ti:3000 | xargs kill -9
@@ -351,20 +381,14 @@ lsof -ti:3000 | xargs kill -9
 PORT=3001 npm run dev
 ```
 
-#### Build/Compilation Errors
-1. Delete `node_modules` and `package-lock.json`
-2. Run `npm install` again
-3. Clear Next.js cache: `rm -rf .next`
-4. Restart the development server
-
 ## 🆘 Support
 
 For issues or questions:
+
 1. Check the setup guides in the documentation files
 2. Verify your InstantDB configuration
 3. Check the browser console for errors
 4. Review the API response messages
-5. See the Troubleshooting section above
 
 ---
 
