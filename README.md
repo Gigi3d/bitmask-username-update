@@ -18,14 +18,14 @@ This application facilitates the migration of Bitmask usernames from campaign/te
 
 #### **3-Step Username Update Flow** (`/update`)
 
-- **Step 1 - Old Username**: Enter your campaign/testnet Bitmask username
+- **Step 1 - Old Username or nPUB**: Enter your campaign/testnet Bitmask username OR your nPUB key (63 characters starting with npub1)
 - **Step 2 - Telegram Verification**: Verify your Telegram account associated with the campaign
 - **Step 3 - New Username**: Enter your new mainnet Bitmask wallet username
 - **Step 4 - Success Confirmation**: Visual confirmation with submission details
 
 #### **Real-Time Validation**
 
-- **Username Format Validation**: Ensures usernames meet requirements
+- **Username/nPUB Format Validation**: Validates both username and nPUB key formats
 - **Telegram Handle Validation**: Accepts handles with or without @ symbol
 - **Cross-Reference Validation**: Automatically validates against campaign CSV records
 - **Duplicate Prevention**: Prevents multiple submissions from the same user
@@ -34,7 +34,7 @@ This application facilitates the migration of Bitmask usernames from campaign/te
 #### **Status Checker** (`/status`)
 
 - **Submission Lookup**: Check if you've already submitted an update
-- **Search Options**: Search by old username or Telegram account
+- **Search Options**: Search by old username, nPUB key, or Telegram account
 - **Submission Details**: View your submission details and timestamp
 - **Update History**: Track your username migration status
 
