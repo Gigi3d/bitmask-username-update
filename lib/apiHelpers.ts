@@ -39,7 +39,7 @@ export function handleApiError(
  * @param status - HTTP status code (default: 200)
  * @returns NextResponse with success data
  */
-export function createSuccessResponse(data: any, status: number = 200): NextResponse {
+export function createSuccessResponse<T = unknown>(data: T, status: number = 200): NextResponse {
     return NextResponse.json(data, { status });
 }
 
@@ -65,7 +65,7 @@ export function createCacheHeaders(
  * @returns Object with isValid boolean and error message if invalid
  */
 export function validateRequestBody(
-    body: any,
+    body: Record<string, unknown>,
     requiredFields: string[]
 ): { isValid: boolean; error?: string; missingFields?: string[] } {
     if (!body || typeof body !== 'object') {

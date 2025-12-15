@@ -91,11 +91,11 @@ export function escapeSql(input: string): string {
 /**
  * Sanitize object by applying sanitization to all string values
  */
-export function sanitizeObject<T extends Record<string, any>>(
+export function sanitizeObject<T extends Record<string, unknown>>(
     obj: T,
     sanitizeFn: (value: string) => string = sanitizeString
 ): T {
-    const sanitized: any = {};
+    const sanitized: Record<string, unknown> = {};
 
     for (const [key, value] of Object.entries(obj)) {
         if (typeof value === 'string') {

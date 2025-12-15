@@ -238,21 +238,18 @@ export async function getUserUpdates(): Promise<UserUpdate[]> {
       : Object.values(result.user_updates);
 
     // Map and validate the updates to ensure they match UserUpdate type
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const updates: UserUpdate[] = rawUpdates
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .filter((update: any): update is UserUpdate => {
+      .filter((update: unknown): update is UserUpdate => {
         return (
           update &&
-          typeof update.id === 'string' &&
-          typeof update.oldUsername === 'string' &&
-          typeof update.telegramAccount === 'string' &&
-          typeof update.newUsername === 'string' &&
-          typeof update.submittedAt === 'number'
+          typeof (update as UserUpdate).id === 'string' &&
+          typeof (update as UserUpdate).oldUsername === 'string' &&
+          typeof (update as UserUpdate).telegramAccount === 'string' &&
+          typeof (update as UserUpdate).newUsername === 'string' &&
+          typeof (update as UserUpdate).submittedAt === 'number'
         );
       })
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .map((update: any) => ({
+      .map((update: UserUpdate) => ({
         id: update.id,
         oldUsername: update.oldUsername,
         telegramAccount: update.telegramAccount,
@@ -290,20 +287,17 @@ export async function getAdminUsers(): Promise<AdminUserRecord[]> {
       : Object.values(result.admin_users);
 
     // Map and validate the admins to ensure they match AdminUserRecord type
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const admins: AdminUserRecord[] = rawAdmins
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .filter((admin: any): admin is AdminUserRecord => {
+      .filter((admin: unknown): admin is AdminUserRecord => {
         return (
           admin &&
-          typeof admin.id === 'string' &&
-          typeof admin.email === 'string' &&
-          typeof admin.role === 'string' &&
-          typeof admin.createdAt === 'number'
+          typeof (admin as AdminUserRecord).id === 'string' &&
+          typeof (admin as AdminUserRecord).email === 'string' &&
+          typeof (admin as AdminUserRecord).role === 'string' &&
+          typeof (admin as AdminUserRecord).createdAt === 'number'
         );
       })
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .map((admin: any) => ({
+      .map((admin: AdminUserRecord) => ({
         id: admin.id,
         email: admin.email,
         role: admin.role as 'admin' | 'superadmin',

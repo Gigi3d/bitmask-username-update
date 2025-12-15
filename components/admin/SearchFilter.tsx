@@ -2,13 +2,13 @@
 
 import { useState, useMemo } from 'react';
 
-interface SearchFilterProps {
-    data: any[];
-    onFilteredDataChange: (filtered: any[]) => void;
+interface SearchFilterProps<T = Record<string, unknown>> {
+    data: T[];
+    onFilteredDataChange: (filtered: T[]) => void;
     searchFields: string[];
 }
 
-export default function SearchFilter({ data, onFilteredDataChange, searchFields }: SearchFilterProps) {
+export default function SearchFilter<T extends Record<string, unknown>>({ data, onFilteredDataChange, searchFields }: SearchFilterProps<T>) {
     const [searchTerm, setSearchTerm] = useState('');
     const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'week' | 'month'>('all');
     const [sortBy, setSortBy] = useState<string>('submittedAt');
@@ -92,7 +92,7 @@ export default function SearchFilter({ data, onFilteredDataChange, searchFields 
                     <label className="block text-sm font-semibold mb-2">Date Range</label>
                     <select
                         value={dateFilter}
-                        onChange={(e) => setDateFilter(e.target.value as any)}
+                        onChange={(e) => setDateFilter(e.target.value as 'all' | 'today' | 'week' | 'month')}
                         className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:border-accent"
                     >
                         <option value="all">All Time</option>

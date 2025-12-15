@@ -100,7 +100,7 @@ export function getTimeRemaining(): string {
 
         const hours = Math.floor(hoursRemaining);
         return `${hours} hour${hours !== 1 ? 's' : ''}`;
-    } catch (error) {
+    } catch {
         return '';
     }
 }
