@@ -50,7 +50,7 @@ export default function CSVUpload() {
 
       // Create XMLHttpRequest for progress tracking
       const xhr = new XMLHttpRequest();
-      
+
       const promise = new Promise<Response>((resolve, reject) => {
         xhr.upload.addEventListener('progress', (e) => {
           if (e.lengthComputable) {
@@ -66,13 +66,13 @@ export default function CSVUpload() {
             const [key, value] = line.split(': ');
             if (key) headers[key] = value;
           });
-          
+
           const response = new Response(xhr.responseText, {
             status: xhr.status,
             statusText: xhr.statusText,
             headers: new Headers(headers)
           });
-          
+
           if (xhr.status >= 200 && xhr.status < 300) {
             resolve(response);
           } else {
@@ -117,22 +117,22 @@ export default function CSVUpload() {
       setUploadProgress(100);
       setSuccess(true);
       setRowCount(data.rowCount || null);
-      
+
       // Check if message contains warning about duplicates
       if (data.message && data.message.includes('Warning:')) {
         setWarning(data.message);
       } else {
         setWarning('');
       }
-      
+
       setFile(null);
-      
+
       // Reset file input
       const fileInput = document.getElementById('csv-file') as HTMLInputElement;
       if (fileInput) {
         fileInput.value = '';
       }
-      
+
       // Reset progress after a moment
       setTimeout(() => setUploadProgress(0), 2000);
     } catch (err) {
@@ -146,9 +146,20 @@ export default function CSVUpload() {
   return (
     <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
       <h2 className="text-2xl font-bold mb-4">Upload CSV</h2>
-      <p className="text-gray-400 mb-6 text-sm">
-        Upload a CSV file with columns: old username, telegram account, new username
-      </p>
+      <div className="mb-6">
+        <p className="text-gray-400 text-sm mb-2">
+          Upload a CSV file with the following columns:
+        </p>
+        <ul className="text-gray-400 text-sm space-y-1 list-disc list-inside">
+          <li><span className="font-semibold text-white">old username</span> - User's old Bitmask username</li>
+          <li><span className="font-semibold text-white">telegram account</span> - User's Telegram handle</li>
+          <li><span className="font-semibold text-white">new username</span> - User's new username</li>
+          <li><span className="font-semibold text-accent">npub key</span> <span className="text-gray-500">(optional)</span> - User's nPUB key as alternative identifier</li>
+        </ul>
+        <p className="text-gray-500 text-xs mt-3">
+          Note: Either "old username" or "npub key" must be provided for each row.
+        </p>
+      </div>
 
       <div className="space-y-4">
         <div>

@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { AnalyticsData } from '@/types';
 import { getUserUpdates, getCSVData, getAdminUsers } from '@/lib/storage';
-import { formatDate, getWeekStart } from '@/lib/utils';
+import { formatDate, getWeekStart, normalizeTelegramAccount } from '@/lib/utils';
 import { requireAdminAuth } from '@/lib/auth';
+import { handleApiError, createValidationError, createCacheHeaders } from '@/lib/apiHelpers';
 
 // Force dynamic rendering to support admin-specific filtering
 export const dynamic = 'force-dynamic';
@@ -17,10 +18,7 @@ export async function GET(request: NextRequest) {
 
     const adminEmail = request.headers.get('x-user-email');
     if (!adminEmail) {
-      return NextResponse.json(
-        { message: 'Admin email not provided' },
-        { status: 400 }
-      );
+      return createValidationError('Admin email not provided');
     }
 
     // Get all user updates
@@ -37,10 +35,10 @@ export async function GET(request: NextRequest) {
     if (!isSuperAdmin) {
       const adminCSVData = await getCSVData(false, adminEmail);
       const adminTelegramAccounts = new Set(adminCSVData.keys());
-      
+
       // Filter updates to only include those matching admin's CSV records
       updates = updates.filter(update => {
-        const normalizedAccount = update.telegramAccount.toLowerCase().replace('@', '');
+        const normalizedAccount = normalizeTelegramAccount(update.telegramAccount);
         return adminTelegramAccounts.has(normalizedAccount);
       });
     }
@@ -87,22 +85,10 @@ export async function GET(request: NextRequest) {
     };
 
     return NextResponse.json(analyticsData, {
-      headers: {
-        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
-      },
+      headers: createCacheHeaders(),
     });
   } catch (error) {
-    if (process.env.NODE_ENV === 'development') {
-      console.error('Error fetching analytics:', error);
-    }
-    const errorMessage = error instanceof Error ? error.message : 'Failed to fetch analytics';
-    return NextResponse.json(
-      { 
-        message: 'Failed to fetch analytics',
-        error: process.env.NODE_ENV === 'development' ? errorMessage : undefined
-      },
-      { status: 500 }
-    );
+    return handleApiError(error, 500, 'Failed to fetch analytics');
   }
 }
 

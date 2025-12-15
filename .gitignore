@@ -23,9 +23,15 @@
 # misc
 .DS_Store
 *.pem
+.env
+.env*.local
+.vercelignore
 
-# debug
-npm-debug.log*
+# Mac system files
+.DS_Store
+.AppleDouble
+.LSOverride
+._*.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*

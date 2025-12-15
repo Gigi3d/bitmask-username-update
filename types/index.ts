@@ -2,13 +2,16 @@ export interface CSVRow {
   oldUsername: string;
   telegramAccount: string;
   newUsername: string;
+  npubKey?: string; // Optional nPUB key as alternative identifier
 }
 
 export interface UserUpdateData {
   oldUsername: string;
   telegramAccount: string;
   newUsername: string;
-  submittedAt: string; // ISO string for proper JSON serialization
+  npubKey?: string; // Optional nPUB key as alternative identifier
+  trackingId?: string; // Optional tracking ID for submission tracking
+  submittedAt: number; // Unix timestamp
 }
 
 export interface AnalyticsData {
@@ -30,6 +33,7 @@ export interface CSVRecord {
   oldUsername: string;
   telegramAccount: string;
   newUsername: string;
+  npubKey?: string; // Optional nPUB key as alternative identifier
   createdAt: number;
   uploadedBy?: string; // Email of the admin who uploaded the CSV (optional for backward compatibility)
 }
@@ -39,6 +43,7 @@ export interface UserUpdate {
   oldUsername: string;
   telegramAccount: string;
   newUsername: string;
+  npubKey?: string; // Optional nPUB key as alternative identifier
   submittedAt: number;
 }
 
@@ -56,6 +61,7 @@ export const instantSchema = {
       oldUsername: 'string',
       telegramAccount: 'string',
       newUsername: 'string',
+      npubKey: 'string',
       createdAt: 'number',
       uploadedBy: 'string',
     },
@@ -63,6 +69,7 @@ export const instantSchema = {
       oldUsername: 'string',
       telegramAccount: 'string',
       newUsername: 'string',
+      npubKey: 'string',
       submittedAt: 'number',
     },
     admin_users: {

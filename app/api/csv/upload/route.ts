@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdminAuth } from '@/lib/auth';
-import { parseCSV } from '@/lib/utils';
+import { parseCSV, normalizeTelegramAccount } from '@/lib/utils';
 import { setCSVData } from '@/lib/storage';
 import { CSVRow } from '@/types';
+import { handleApiError, createValidationError } from '@/lib/apiHelpers';
 
 /**
  * API route to upload and process CSV file
@@ -26,10 +27,7 @@ export async function POST(request: NextRequest) {
     // Get admin email from header (set by client)
     const adminEmail = request.headers.get('x-user-email');
     if (!adminEmail) {
-      return NextResponse.json(
-        { message: 'Admin email not provided in x-user-email header' },
-        { status: 400 }
-      );
+      return createValidationError('Admin email not provided in x-user-email header');
     }
 
     // Parse form data
@@ -37,18 +35,12 @@ export async function POST(request: NextRequest) {
     const file = formData.get('file') as File;
 
     if (!file) {
-      return NextResponse.json(
-        { message: 'No file provided' },
-        { status: 400 }
-      );
+      return createValidationError('No file provided');
     }
 
     // Validate file type
     if (!file.name.endsWith('.csv') && file.type !== 'text/csv') {
-      return NextResponse.json(
-        { message: 'File must be a CSV file' },
-        { status: 400 }
-      );
+      return createValidationError('File must be a CSV file');
     }
 
     // Read file content
@@ -91,7 +83,7 @@ export async function POST(request: NextRequest) {
         console.error('❌ Error parsing CSV:', error);
       }
       const errorMessage = error instanceof Error ? error.message : 'Invalid CSV format';
-      
+
       // Provide more helpful error message
       let detailedError = errorMessage;
       if (errorMessage.includes('columns')) {
@@ -99,9 +91,9 @@ export async function POST(request: NextRequest) {
         const headers = lines[0] || '';
         detailedError = `${errorMessage}\n\nFound headers: ${headers}\n\nExpected headers should include:\n- A column with "old" and "username"\n- A column with "telegram" or "tg"\n- A column with "new" and "username"`;
       }
-      
+
       return NextResponse.json(
-        { 
+        {
           message: `CSV parsing error: ${errorMessage}`,
           details: process.env.NODE_ENV === 'development' ? detailedError : undefined
         },
@@ -120,11 +112,11 @@ export async function POST(request: NextRequest) {
           allLines: lines.slice(0, 5)
         });
       }
-      
+
       return NextResponse.json(
-        { 
+        {
           message: 'CSV file contains no valid data rows',
-          details: process.env.NODE_ENV === 'development' 
+          details: process.env.NODE_ENV === 'development'
             ? `Found ${lines.length} lines. Make sure:\n1. Headers match expected format\n2. Data rows have all required fields filled\n3. No empty rows between data`
             : undefined
         },
@@ -137,14 +129,14 @@ export async function POST(request: NextRequest) {
     const duplicateAccounts: string[] = [];
 
     for (const row of parsedRows) {
-      // Normalize telegram account (lowercase, remove @)
-      const normalizedAccount = row.telegramAccount.toLowerCase().replace('@', '');
-      
+      // Normalize telegram account
+      const normalizedAccount = normalizeTelegramAccount(row.telegramAccount);
+
       // Check for duplicates
       if (csvDataMap.has(normalizedAccount)) {
         duplicateAccounts.push(row.telegramAccount);
       }
-      
+
       csvDataMap.set(normalizedAccount, row);
     }
 
@@ -157,7 +149,7 @@ export async function POST(request: NextRequest) {
       }
       const errorMessage = error instanceof Error ? error.message : 'Failed to store CSV data';
       return NextResponse.json(
-        { 
+        {
           message: 'Failed to store CSV data',
           error: process.env.NODE_ENV === 'development' ? errorMessage : undefined
         },
@@ -174,7 +166,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       message,
       rowCount: csvDataMap.size,
-      ...(duplicateAccounts.length > 0 && { 
+      ...(duplicateAccounts.length > 0 && {
         warnings: `Warning: ${duplicateAccounts.length} duplicate telegram account(s) found. Only the last occurrence was kept.`
       })
     }, {
@@ -183,17 +175,7 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    if (process.env.NODE_ENV === 'development') {
-      console.error('Unexpected error in CSV upload:', error);
-    }
-    const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
-    return NextResponse.json(
-      { 
-        message: 'Failed to upload CSV',
-        error: process.env.NODE_ENV === 'development' ? errorMessage : undefined
-      },
-      { status: 500 }
-    );
+    return handleApiError(error, 500, 'Failed to upload CSV');
   }
 }
 

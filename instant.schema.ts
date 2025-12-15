@@ -23,6 +23,7 @@ const _schema = i.schema({
       oldUsername: i.string(),
       telegramAccount: i.string(),
       newUsername: i.string(),
+      npubKey: i.string().optional(), // nPUB key as alternative identifier
       createdAt: i.number(),
       uploadedBy: i.string().optional(), // Email of the admin who uploaded the CSV (optional for backward compatibility)
     }),
@@ -30,6 +31,7 @@ const _schema = i.schema({
       oldUsername: i.string(),
       telegramAccount: i.string(),
       newUsername: i.string(),
+      npubKey: i.string().optional(), // nPUB key as alternative identifier
       submittedAt: i.number(),
     }),
   },
@@ -53,7 +55,7 @@ const _schema = i.schema({
 
 // This helps Typescript display nicer intellisense
 type _AppSchema = typeof _schema;
-interface AppSchema extends _AppSchema {}
+interface AppSchema extends _AppSchema { }
 const schema: AppSchema = _schema;
 
 export type { AppSchema };

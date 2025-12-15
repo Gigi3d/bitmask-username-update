@@ -25,7 +25,7 @@ if (!appId) {
  * created when first accessed, and cached for subsequent accesses. This allows
  * the module to be safely reloaded during HMR without breaking the application.
  */
-let db: ReturnType<typeof initClient> | null = null;
+let dbInstance: ReturnType<typeof initClient> | null = null;
 
 /**
  * Gets or initializes the InstantDB client instance.
@@ -38,30 +38,30 @@ function getDb(): ReturnType<typeof initClient> {
   }
 
   // If already initialized, return it (handles HMR by reusing existing instance)
-  if (db) {
-    return db;
+  if (dbInstance) {
+    return dbInstance;
   }
 
   try {
-    db = initClient({
+    dbInstance = initClient({
       appId: appId!,
       schema: schema as unknown as Parameters<typeof initClient>[0]['schema'],
     });
-    
+
     if (process.env.NODE_ENV === 'development') {
       console.log('✅ InstantDB client initialized successfully');
     }
-    
-    return db;
+
+    return dbInstance;
   } catch (error) {
     const errorObj = error instanceof Error ? error : new Error(String(error));
     console.error('❌ Failed to initialize InstantDB client:', errorObj);
-    
+
     // During HMR, the module might be reloaded - reset db to allow retry
     if (process.env.NODE_ENV === 'development') {
-      db = null;
+      dbInstance = null;
     }
-    
+
     throw errorObj;
   }
 }
@@ -70,29 +70,29 @@ function getDb(): ReturnType<typeof initClient> {
 // Note: Admin token should be set in environment variables for production
 export function getAdminDb() {
   const adminToken = process.env.INSTANT_ADMIN_TOKEN;
-  
+
   if (process.env.NODE_ENV === 'development') {
     console.log('🔧 getAdminDb called');
     console.log('🔑 Admin Token:', adminToken ? `${adminToken.substring(0, 8)}...` : 'Not set');
   }
-  
+
   if (!adminToken) {
     // For development, we can use the client instance
     // In production, you should set INSTANT_ADMIN_TOKEN
     console.warn('⚠️ INSTANT_ADMIN_TOKEN not set. Using client instance for server operations.');
   }
-  
+
   try {
     const adminDb = initAdmin({
       appId: appId!, // appId is already validated above
       adminToken: adminToken || undefined,
       schema: schema as unknown as Parameters<typeof initAdmin>[0]['schema'], // Use schema from instant.schema.ts which matches the database
     });
-    
+
     if (process.env.NODE_ENV === 'development') {
       console.log('✅ InstantDB admin initialized successfully');
     }
-    
+
     return adminDb;
   } catch (error) {
     const errorObj = error instanceof Error ? error : new Error(String(error));
