@@ -25,6 +25,8 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizeCss: true,
     optimizePackageImports: ['recharts', '@instantdb/react', '@instantdb/admin'],
+    // Prevent InstantDB from being bundled in server components during build
+    serverComponentsExternalPackages: ['@instantdb/admin', '@instantdb/react'],
   },
 
   // Turbopack configuration

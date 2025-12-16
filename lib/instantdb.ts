@@ -2,8 +2,7 @@ import { init as initClient } from '@instantdb/react';
 import { init as initAdmin } from '@instantdb/admin';
 import schema from '../instant.schema';
 
-// Use placeholder during build, real value at runtime
-const appId = process.env.NEXT_PUBLIC_INSTANT_APP_ID || 'placeholder-for-build';
+const appId = process.env.NEXT_PUBLIC_INSTANT_APP_ID;
 
 // Debug logging (only in development)
 if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
@@ -33,8 +32,8 @@ function getDb(): ReturnType<typeof initClient> {
     throw new Error('InstantDB client can only be used on the client side');
   }
 
-  // Validate appId is available and not placeholder
-  if (!appId || appId === 'placeholder-for-build') {
+  // Validate appId is available
+  if (!appId) {
     throw new Error('NEXT_PUBLIC_INSTANT_APP_ID is not set in environment variables');
   }
 
@@ -72,8 +71,8 @@ function getDb(): ReturnType<typeof initClient> {
 export function getAdminDb() {
   const adminToken = process.env.INSTANT_ADMIN_TOKEN;
 
-  // Validate appId is available and not placeholder
-  if (!appId || appId === 'placeholder-for-build') {
+  // Validate appId is available
+  if (!appId) {
     throw new Error('NEXT_PUBLIC_INSTANT_APP_ID is not set in environment variables');
   }
 
