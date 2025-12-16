@@ -13,7 +13,7 @@ export default function InstructionsPage() {
 
           {/* Main heading - larger and more prominent */}
           <h1 className="text-4xl md:text-6xl font-bold mb-8 text-white leading-tight">
-            Welcome BitMask OG, we are ready for main-net
+            Welcome BitMask OG, we are ready for mainnet RGB action
           </h1>
 
           {/* Yellow decorative T-shape */}
