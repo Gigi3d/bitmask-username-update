@@ -3,7 +3,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { db, auth } from '@/lib/instantdb';
-import { id } from '@instantdb/react';
 import dynamic from 'next/dynamic';
 import ErrorBoundary from '@/components/ErrorBoundary';
 // Lazy load heavy components for better performance
@@ -61,7 +60,6 @@ const Analytics = dynamic(() => import('@/components/Analytics'), {
 export default function AdminDashboard() {
   const router = useRouter();
   const { user, isLoading } = db.useAuth();
-  const [adminCheckDone, setAdminCheckDone] = useState(false);
   const [adminCreationError, setAdminCreationError] = useState('');
 
   // Query admin_users to check if current user is an admin
@@ -92,8 +90,6 @@ export default function AdminDashboard() {
           `User ${user.email} is not authorized as an admin. Please contact support.`
         );
       }
-
-      setAdminCheckDone(true);
     }
   }, [user, isLoading, adminData]);
 
