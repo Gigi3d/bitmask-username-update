@@ -27,7 +27,7 @@ const nextConfig: NextConfig = {
   // Experimental features for performance
   experimental: {
     optimizeCss: true,
-    optimizePackageImports: ['recharts', '@instantdb/react', '@instantdb/admin'],
+    optimizePackageImports: ['recharts'],
   },
 
   // Turbopack configuration
