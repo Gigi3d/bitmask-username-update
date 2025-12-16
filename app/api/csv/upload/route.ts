@@ -78,6 +78,7 @@ export async function POST(request: NextRequest) {
         oldUsername: row.oldUsername,
         newUsername: row.newUsername,
         createdAt: now,
+        telegramAccount: '', // Required by schema but not used
       };
 
       // Only add npubKey if it exists
