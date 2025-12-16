@@ -66,16 +66,16 @@ export default function AdminDashboard() {
 
   // Query admin_users to check if current user is an admin
   const { data: adminData } = db.useQuery({ admin_users: {} });
-  
+
   // Check if current user is a superadmin
-  const adminUsersArray = adminData?.admin_users 
-    ? (Array.isArray(adminData.admin_users) 
-        ? adminData.admin_users 
-        : Object.values(adminData.admin_users))
+  const adminUsersArray = adminData?.admin_users
+    ? (Array.isArray(adminData.admin_users)
+      ? adminData.admin_users
+      : Object.values(adminData.admin_users))
     : [];
   const currentUserAdmin = (adminUsersArray as Array<{ email?: string; role?: string }>)
     .find((admin) => admin.email?.toLowerCase() === user?.email?.toLowerCase()) || null;
-  
+
   const isSuperAdmin = currentUserAdmin?.role === 'superadmin';
 
   // Check and create admin user record if needed
@@ -87,27 +87,35 @@ export default function AdminDashboard() {
         // Check if admin_users record exists for this user
         const adminUsers = adminData?.admin_users || {};
         const adminArray = Array.isArray(adminUsers) ? adminUsers : Object.values(adminUsers);
-        const userIsAdmin = adminArray.some((admin: { email?: string; role?: string }) => 
+        const userIsAdmin = adminArray.some((admin: { email?: string; role?: string }) =>
           admin.email?.toLowerCase() === user.email?.toLowerCase()
         );
-        
+
         if (!userIsAdmin) {
-          // Admin record doesn't exist, try to create it
+          // Admin record doesn't exist, try to create it via API
           if (process.env.NODE_ENV === 'development') {
             console.log('Creating admin user record for:', user.email);
           }
-          
-          const recordId = id();
-          const now = Date.now();
-          
-          await db.transact([
-            db.tx.admin_users[recordId].create({
-              email: user.email.toLowerCase().trim(),
+
+          // Use API route instead of client-side transaction
+          // This works in production without requiring INSTANT_ADMIN_TOKEN
+          const response = await fetch('/api/admin/create', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-user-email': user.email,
+            },
+            body: JSON.stringify({
+              email: user.email,
               role: 'superadmin',
-              createdAt: now,
-            })
-          ]);
-          
+            }),
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || 'Failed to create admin record');
+          }
+
           if (process.env.NODE_ENV === 'development') {
             console.log('Admin user record created successfully');
           }
@@ -131,13 +139,13 @@ export default function AdminDashboard() {
   useEffect(() => {
     // Log auth state for debugging (development only)
     if (process.env.NODE_ENV === 'development') {
-      console.log('🔍 AdminDashboard auth check:', { 
-        isLoading, 
+      console.log('🔍 AdminDashboard auth check:', {
+        isLoading,
         user: user?.email || 'null',
-        hasUser: !!user 
+        hasUser: !!user
       });
     }
-    
+
     // Give auth state time to update after redirect (race condition fix)
     const checkAuth = setTimeout(() => {
       if (!isLoading && !user) {

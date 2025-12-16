@@ -36,22 +36,32 @@ export async function POST(request: NextRequest) {
     if (userEmail) {
       try {
         const admins = await getAdminUsers();
-        const requester = admins.find(
-          admin => admin.email.toLowerCase() === userEmail.toLowerCase()
-        );
-        
-        if (!requester) {
-          return NextResponse.json(
-            { error: 'Unauthorized. You must be an admin to add other admins.' },
-            { status: 403 }
+
+        // If no admins exist yet, allow self-registration (first admin)
+        if (admins.length === 0) {
+          if (process.env.NODE_ENV === 'development') {
+            console.log('No admins exist yet. Allowing first admin self-registration.');
+          }
+          // Continue to create the admin user
+        } else {
+          // If admins exist, verify the requester is a superadmin
+          const requester = admins.find(
+            admin => admin.email.toLowerCase() === userEmail.toLowerCase()
           );
-        }
-        
-        if (requester.role !== 'superadmin') {
-          return NextResponse.json(
-            { error: 'Unauthorized. Only superadmins can add other admins.' },
-            { status: 403 }
-          );
+
+          if (!requester) {
+            return NextResponse.json(
+              { error: 'Unauthorized. You must be an admin to add other admins.' },
+              { status: 403 }
+            );
+          }
+
+          if (requester.role !== 'superadmin') {
+            return NextResponse.json(
+              { error: 'Unauthorized. Only superadmins can add other admins.' },
+              { status: 403 }
+            );
+          }
         }
       } catch {
         // If we can't verify, allow if admin token is set (for first admin creation)
@@ -75,10 +85,10 @@ export async function POST(request: NextRequest) {
     // If no user email provided and no admin token, require one of them
     // This allows first admin creation via script with admin token
     const hasAdminToken = !!process.env.INSTANT_ADMIN_TOKEN;
-    
+
     if (!userEmail && !hasAdminToken) {
       return NextResponse.json(
-        { 
+        {
           error: 'Either user email (x-user-email header) or INSTANT_ADMIN_TOKEN must be provided.',
           instructions: 'Get your admin token from the InstantDB dashboard: https://instantdb.com/dashboard'
         },
@@ -96,7 +106,7 @@ export async function POST(request: NextRequest) {
     if (process.env.NODE_ENV === 'development') {
       console.error('Error creating admin user:', error);
     }
-    
+
     if (error instanceof Error) {
       if (error.message.includes('already exists')) {
         return NextResponse.json(
@@ -104,7 +114,7 @@ export async function POST(request: NextRequest) {
           { status: 409 }
         );
       }
-      
+
       return NextResponse.json(
         { error: error.message },
         { status: 500 }
