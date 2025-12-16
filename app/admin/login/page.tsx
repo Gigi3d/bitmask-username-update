@@ -3,6 +3,9 @@
 import AdminLogin from '@/components/AdminLogin';
 import { useEffect, useState, ErrorInfo, Component, ReactNode } from 'react';
 
+// Force dynamic rendering - do not prerender this page
+export const dynamic = 'force-dynamic';
+
 class ErrorBoundary extends Component<
   { children: ReactNode },
   { hasError: boolean; error: Error | null }
