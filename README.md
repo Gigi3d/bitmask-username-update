@@ -1,42 +1,40 @@
 # Bitmask Username Update
 
-A Next.js web application designed to help Bitmask users update their usernames during the transition from campaign/testnet to mainnet. The application provides a streamlined 3-step process for users to verify and update their usernames, along with an admin dashboard for managing campaign data and viewing analytics.
+A Next.js app for Bitmask users to update their usernames from campaign/testnet to mainnet. Simple 2-step process with admin dashboard for CSV management and analytics.
 
 ## 🎯 Overview
 
-This application facilitates the migration of Bitmask usernames from campaign/testnet to mainnet. Users can submit their username updates through a guided 3-step process, while administrators can manage campaign data via CSV uploads and monitor submission analytics.
+Users update their Bitmask username in 2 steps. Admins manage campaign data via CSV uploads and track submissions. Each user gets 3 attempts to update their username.
 
 ## ✨ Key Features
 
-### 👥 User-Facing Features
+### 👥 User Features
 
-#### **Welcome & Instructions**
+#### **2-Step Update Flow** (`/update`)
 
-- **Instructions Page**: Clear overview of the username update process
-- **FAQ Section**: Answers to common questions
-- **Step-by-step Guidance**: Visual walkthrough of the entire process
+- **Step 1**: Enter old username or nPUB key (63 chars starting with npub1)
+- **Step 2**: Enter new mainnet username
+- **Success**: Confirmation with submission details
 
-#### **3-Step Username Update Flow** (`/update`)
+#### **3-Attempt Limit**
 
-- **Step 1 - Old Username or nPUB**: Enter your campaign/testnet Bitmask username OR your nPUB key (63 characters starting with npub1)
-- **Step 2 - Telegram Verification**: Verify your Telegram account associated with the campaign
-- **Step 3 - New Username**: Enter your new mainnet Bitmask wallet username
-- **Step 4 - Success Confirmation**: Visual confirmation with submission details
+- Users can update their username up to 3 times
+- All 3 usernames are stored and tracked
+- Clear feedback on remaining attempts
 
 #### **Real-Time Validation**
 
-- **Username/nPUB Format Validation**: Validates both username and nPUB key formats
-- **Telegram Handle Validation**: Accepts handles with or without @ symbol
-- **Cross-Reference Validation**: Automatically validates against campaign CSV records
-- **Duplicate Prevention**: Prevents multiple submissions from the same user
-- **Instant Feedback**: Real-time error messages and validation status
+- Username/nPUB format validation
+- Cross-reference against campaign CSV records
+- Duplicate prevention
+- Instant error feedback
 
 #### **Status Checker** (`/status`)
 
-- **Submission Lookup**: Check if you've already submitted an update
-- **Search Options**: Search by old username, nPUB key, or Telegram account
-- **Submission Details**: View your submission details and timestamp
-- **Update History**: Track your username migration status
+- Check if you've already submitted an update
+- Search by old username or nPUB key
+- View submission details and remaining attempts
+- Track update history
 
 ---
 
@@ -44,77 +42,47 @@ This application facilitates the migration of Bitmask usernames from campaign/te
 
 #### **Secure Authentication** (`/admin/login`)
 
-- **Magic Code Authentication**: Passwordless login via email (InstantDB)
-- **No Password Required**: Secure magic code sent to admin email
-- **Session Management**: Automatic session handling and security
-- **Role-Based Access**: Different permissions for admins and superadmins
+- Magic code login via email (InstantDB)
+- Role-based access (admin/superadmin)
+- Automatic session management
 
 #### **Multi-Admin Support**
 
-- **Regular Admins**:
-  - Upload and manage their own CSV files
-  - View analytics scoped to their own data
-  - Track their own campaign participants
-- **Superadmins**:
-  - Full access to ALL data from all admins
-  - Manage admin users (create, view, assign roles)
-  - System-wide analytics and oversight
-- **Data Isolation**: Each admin's CSV uploads are tracked and scoped separately
-- **Independent Datasets**: Uploading a new CSV replaces only that admin's previous upload
+- **Regular Admins**: Upload/manage own CSV files, view scoped analytics
+- **Superadmins**: Full access to all data, manage admin users, system-wide analytics
+- **Data Isolation**: Each admin's uploads tracked separately
 
 #### **CSV Upload & Management** (`/admin/dashboard`)
 
-- **CSV File Upload**: Upload campaign data with drag-and-drop support
-- **Format Validation**: Automatic validation of CSV structure and data
-- **Required Columns**: oldUsername, telegramAccount, newUsername
-- **Flexible Format**: Handles Telegram accounts with or without @ symbol
-- **Duplicate Handling**: Smart handling of duplicate entries
-- **Upload History**: Track when and who uploaded CSV files
-- **Data Replacement**: New uploads replace previous data for that admin only
+- Drag-and-drop CSV upload
+- Format validation (required: oldUsername, newUsername)
+- Duplicate handling
+- Upload history tracking
 
-#### **Comprehensive Analytics Dashboard**
+#### **Analytics Dashboard**
 
-- **Scoped Analytics**:
-  - **Superadmins**: View 100% of ALL data from all admins combined
-  - **Regular Admins**: View analytics scoped only to their own CSV data
-  
-- **Key Metrics**:
-  - **Total Updates**: Count of all submitted username updates
-  - **Daily Statistics**: Updates submitted per day
-  - **Weekly Statistics**: Updates submitted per week
-  - **Success Rate**: Percentage of successful validations
-  - **Completion Rate**: Percentage of campaign users who updated
-  
-- **Visual Analytics**:
-  - **Interactive Charts**: Beautiful visualizations using Recharts
-  - **Activity Timeline**: Time-series graph of submission activity
-  - **Trend Analysis**: Daily and weekly trend indicators
-  - **Real-Time Updates**: Dashboard refreshes every 30 seconds automatically
+- Scoped analytics (superadmins see all, admins see own data)
+- Key metrics: total updates, daily/weekly stats, success rate
+- Interactive charts with Recharts
+- Real-time updates (auto-refresh every 30s)
 
-#### **Real-Time Username Updates Feed**
+#### **Real-Time Updates Feed**
 
-- **Live Feed**: Real-time stream of new username updates as they're submitted
-- **Update Details**: Shows old username → new username transitions
-- **User Information**: Displays associated Telegram account
-- **Timestamps**: Exact submission time for each update
-- **Auto-Refresh**: Updates automatically without page reload
-- **No Manual Refresh**: Leverages InstantDB real-time capabilities
+- Live stream of new username updates
+- Shows old → new username transitions with attempt count
+- Auto-refresh via InstantDB
 
-#### **All Updated Records View**
+#### **All Records View**
 
-- **Complete List**: View all submitted username updates
-- **Search & Filter**: Find specific updates quickly
-- **Export Capability**: Download records for external use
-- **Timestamp Tracking**: See when each update was submitted
-- **Sortable Columns**: Sort by any field (username, date, etc.)
+- Complete list of submitted updates
+- Search & filter capabilities
+- Export and sortable columns
 
 #### **Admin Management** (Superadmin Only)
 
-- **Create Admin Users**: Add new administrators to the system
-- **Role Assignment**: Assign admin or superadmin roles
-- **View All Admins**: See complete list of admin accounts
-- **Access Control**: Manage who can access the admin dashboard
-- **Email-Based**: Admin accounts tied to email addresses
+- Create admin users
+- Assign roles (admin/superadmin)
+- Email-based access control
 
 ## 🛠️ Tech Stack
 
@@ -228,81 +196,67 @@ npm start
 
 #### `POST /api/users/update`
 
-Submit a username update request.
+Submit a username update (max 3 attempts).
 
-**Request Body:**
+**Request:**
 
 ```json
 {
   "oldUsername": "old_username",
-  "telegramAccount": "@telegram_handle",
   "newUsername": "new_username"
 }
 ```
 
-**Response:**
+**Response:** `200` (success), `400` (validation error), `404` (not found), `409` (max attempts reached)
 
-- `200`: Update successful
-- `400`: Validation error
-- `404`: Account not found
-- `409`: Duplicate submission
-- `500`: Server error
+#### `POST /api/users/verify-old-username`
+
+Verify old username or nPUB exists in campaign data.
 
 ### Admin Endpoints
 
 #### `POST /api/csv/upload`
 
-Upload CSV file with campaign data. Requires admin authentication.
+Upload campaign CSV (requires auth).
 
 #### `GET /api/analytics/data`
 
-Get analytics data for the dashboard.
+Get dashboard analytics.
 
 ## 📊 Database Schema
 
-The application uses InstantDB with the following schema:
+InstantDB schema:
 
-### Entities
+**csv_records**: Campaign data
 
-- **csv_records**: Campaign data records
-  - `oldUsername`: string
-  - `telegramAccount`: string
-  - `newUsername`: string
-  - `createdAt`: number (timestamp)
-  - `uploadedBy`: string (email of admin who uploaded the CSV)
+- `oldUsername`, `newUsername`, `createdAt`, `uploadedBy`
 
-- **user_updates**: Submitted username updates
-  - `oldUsername`: string
-  - `telegramAccount`: string
-  - `newUsername`: string
-  - `submittedAt`: number (timestamp)
+**user_updates**: Username updates (3-attempt tracking)
 
-- **admin_users**: Admin user records
-  - `email`: string
-  - `role`: string ('admin' | 'superadmin')
-  - `createdAt`: number (timestamp)
+- `oldUsername`, `newUsername1`, `newUsername2`, `newUsername3`
+- `attemptCount`, `submittedAt`, `lastUpdatedAt`
+
+**admin_users**: Admin accounts
+
+- `email`, `role` (admin/superadmin), `createdAt`
 
 ## 🔐 Authentication
 
-The admin dashboard uses InstantDB authentication. Admin users must log in through `/admin/login` to access:
-
-- CSV upload functionality
-- Analytics dashboard
+Admin dashboard uses InstantDB magic code auth via `/admin/login`.
 
 ## 📝 CSV Format
 
-The CSV file should have the following columns:
+Required columns:
 
-- `oldUsername`: The username used during the campaign
-- `telegramAccount`: The Telegram handle (with or without @)
-- `newUsername`: The new mainnet username
+- `oldUsername`: Campaign/testnet username
+- `newUsername`: New mainnet username
 
 Example:
 
 ```csv
-oldUsername,telegramAccount,newUsername
-user123,@telegram_user,newuser123
-user456,@another_user,newuser456
+oldUsername,newUsername
+user123,newuser123
+user456,newuser456
 ```
 
 ## 🧪 Development
