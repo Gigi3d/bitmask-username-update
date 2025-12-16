@@ -21,7 +21,7 @@ export function useDebounceValidation<T>(
         isValidating: boolean;
     }>({ isValid: true, isValidating: false });
 
-    const timeoutRef = useRef<NodeJS.Timeout>();
+    const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
     useEffect(() => {
         // Clear previous timeout
