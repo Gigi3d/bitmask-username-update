@@ -81,8 +81,10 @@ export async function POST(request: NextRequest) {
         telegramAccount: '', // Required by schema
       };
 
-      // Note: npubKey is not in the schema, so we don't include it
-      // To add npubKey support, update the schema in InstantDB dashboard first
+      // Add npubKey if it exists (requires npubKey to be added to InstantDB schema)
+      if (row.npubKey) {
+        newRecord.npubKey = row.npubKey;
+      }
 
       await db.transact([
         db.tx.csv_records[recordId].create(newRecord)
