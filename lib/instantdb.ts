@@ -11,11 +11,6 @@ if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
   console.log('📋 Schema:', schema ? 'Loaded' : 'Missing');
 }
 
-if (!appId) {
-  const error = 'NEXT_PUBLIC_INSTANT_APP_ID is not set in environment variables';
-  console.error('❌ InstantDB Error:', error);
-  throw new Error(error);
-}
 
 /**
  * Client-side InstantDB instance - HMR-safe singleton pattern
@@ -35,6 +30,11 @@ function getDb(): ReturnType<typeof initClient> {
   // Only initialize on client side
   if (typeof window === 'undefined') {
     throw new Error('InstantDB client can only be used on the client side');
+  }
+
+  // Validate appId is available
+  if (!appId) {
+    throw new Error('NEXT_PUBLIC_INSTANT_APP_ID is not set in environment variables');
   }
 
   // If already initialized, return it (handles HMR by reusing existing instance)
@@ -70,6 +70,11 @@ function getDb(): ReturnType<typeof initClient> {
 // Note: Admin token should be set in environment variables for production
 export function getAdminDb() {
   const adminToken = process.env.INSTANT_ADMIN_TOKEN;
+
+  // Validate appId is available
+  if (!appId) {
+    throw new Error('NEXT_PUBLIC_INSTANT_APP_ID is not set in environment variables');
+  }
 
   if (process.env.NODE_ENV === 'development') {
     console.log('🔧 getAdminDb called');
