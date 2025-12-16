@@ -249,13 +249,14 @@ export async function getUserUpdates(): Promise<UserUpdate[]> {
     // Map and validate the updates to ensure they match UserUpdate type
     const updates: UserUpdate[] = rawUpdates
       .filter((update: unknown): update is UserUpdate => {
-        return (
+        const isValid = (
           update &&
           typeof (update as UserUpdate).id === 'string' &&
           typeof (update as UserUpdate).oldUsername === 'string' &&
           typeof (update as UserUpdate).newUsername === 'string' &&
           typeof (update as UserUpdate).submittedAt === 'number'
         );
+        return Boolean(isValid);
       })
       .map((update: UserUpdate) => ({
         id: update.id,
@@ -407,13 +408,14 @@ export async function getAdminUsers(): Promise<AdminUserRecord[]> {
     // Map and validate the admins to ensure they match AdminUserRecord type
     const admins: AdminUserRecord[] = rawAdmins
       .filter((admin: unknown): admin is AdminUserRecord => {
-        return (
+        const isValid = (
           admin &&
           typeof (admin as AdminUserRecord).id === 'string' &&
           typeof (admin as AdminUserRecord).email === 'string' &&
           typeof (admin as AdminUserRecord).role === 'string' &&
           typeof (admin as AdminUserRecord).createdAt === 'number'
         );
+        return Boolean(isValid);
       })
       .map((admin: AdminUserRecord) => ({
         id: admin.id,
