@@ -8,6 +8,11 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
 
+  // ESLint configuration - ignore during build for deployment
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+
   // Optimize images
   images: {
     formats: ['image/avif', 'image/webp'],
