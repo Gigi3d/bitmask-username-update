@@ -112,13 +112,19 @@ export async function setCSVData(csvData: Map<string, CSVRow>, adminEmail: strin
     const now = Date.now();
     const createOps = Array.from(csvData.values()).map(row => {
       const recordId = id();
-      return db.tx.csv_records[recordId].create({
+      const record: Record<string, string | number> = {
         oldUsername: row.oldUsername,
         newUsername: row.newUsername,
-        npubKey: row.npubKey,
         createdAt: now,
         uploadedBy: adminEmail,
-      });
+      };
+
+      // Only include npubKey if it exists
+      if (row.npubKey) {
+        record.npubKey = row.npubKey;
+      }
+
+      return db.tx.csv_records[recordId].create(record);
     });
 
     if (createOps.length > 0) {
