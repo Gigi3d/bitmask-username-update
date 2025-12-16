@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
     // Get database instance
     const db = getAdminDb();
 
-    // Delete existing CSV records for this admin
+    // Delete ALL existing CSV records (since we're not tracking uploadedBy anymore)
     const existingQuery = await db.query({ csv_records: {} });
     const existingRecords = existingQuery?.csv_records
       ? (Array.isArray(existingQuery.csv_records)
@@ -63,12 +63,8 @@ export async function POST(request: NextRequest) {
         : Object.values(existingQuery.csv_records))
       : [];
 
-    const adminRecords = existingRecords.filter((record: any) =>
-      record.uploadedBy?.toLowerCase() === adminEmail.toLowerCase()
-    );
-
-    if (adminRecords.length > 0) {
-      const deleteOps = adminRecords.map((record: any) =>
+    if (existingRecords.length > 0) {
+      const deleteOps = existingRecords.map((record: any) =>
         db.tx.csv_records[record.id].delete()
       );
       await db.transact(deleteOps);
@@ -82,7 +78,6 @@ export async function POST(request: NextRequest) {
         oldUsername: row.oldUsername,
         newUsername: row.newUsername,
         createdAt: now,
-        uploadedBy: adminEmail,
       };
 
       // Only add npubKey if it exists
