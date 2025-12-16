@@ -4,7 +4,7 @@ import { useState } from 'react';
 
 interface FAQItem {
     question: string;
-    answer: string;
+    answer: React.ReactNode;
 }
 
 const faqData: FAQItem[] = [
@@ -38,7 +38,19 @@ const faqData: FAQItem[] = [
     },
     {
         question: 'How do I contact support?',
-        answer: 'If you need assistance, please email support@bitmask.app with your tracking ID (if you have one) and a description of your issue. You can also join our Telegram support group: https://t.me/joinchat/Ajbxchsrj75kMDRi',
+        answer: (
+            <>
+                If you need assistance, please email support@bitmask.app with your tracking ID (if you have one) and a description of your issue. You can also join our Telegram support group:{' '}
+                <a
+                    href="https://t.me/joinchat/Ajbxchsrj75kMDRi"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-accent hover:underline"
+                >
+                    https://t.me/joinchat/Ajbxchsrj75kMDRi
+                </a>
+            </>
+        ),
     },
 ];
 
