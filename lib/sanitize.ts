@@ -89,7 +89,7 @@ export function sanitizeObject<T extends Record<string, unknown>>(
         if (typeof value === 'string') {
             sanitized[key] = sanitizeFn(value);
         } else if (value && typeof value === 'object' && !Array.isArray(value)) {
-            sanitized[key] = sanitizeObject(value, sanitizeFn);
+            sanitized[key] = sanitizeObject(value as Record<string, unknown>, sanitizeFn);
         } else {
             sanitized[key] = value;
         }
