@@ -34,7 +34,7 @@ const faqData: FAQItem[] = [
     },
     {
         question: 'How do I contact support?',
-        answer: 'If you need assistance, please email support@bitmask.app with your tracking ID (if you have one) and a description of your issue.',
+        answer: 'If you need assistance, please email support@bitmask.app with your tracking ID (if you have one) and a description of your issue. You can also join our Telegram support group: https://t.me/joinchat/Ajbxchsrj75kMDRi',
     },
 ];
 
