@@ -83,7 +83,7 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: https:",
               "font-src 'self' data:",
-              "connect-src 'self' https://*.instantdb.com https://vercel.live",
+              "connect-src 'self' https://*.instantdb.com wss://*.instantdb.com https://api.instantdb.com wss://api.instantdb.com https://vercel.live",
               "frame-ancestors 'self'",
             ].join('; ')
           },
