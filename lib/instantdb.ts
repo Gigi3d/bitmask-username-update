@@ -107,33 +107,45 @@ export function getAdminDb() {
 }
 
 /**
- * Export db instance as a Proxy for HMR safety.
- * 
- * The Proxy ensures:
- * - Lazy initialization: db is only created when first accessed
- * - HMR resilience: module can be reloaded without breaking
- * - Proper method binding: functions maintain correct 'this' context
- * - Nested object support: handles tx, auth, and other nested properties
+ * Export db getter function for safe lazy initialization.
+ * Only initializes when actually called in browser context.
  */
+let _dbProxy: ReturnType<typeof initClient> | null = null;
+
+function getDbProxy(): ReturnType<typeof initClient> {
+  if (typeof window === 'undefined') {
+    throw new Error('InstantDB can only be used on the client side');
+  }
+
+  if (!_dbProxy) {
+    const instance = getDb();
+    _dbProxy = new Proxy(instance, {
+      get(target, prop) {
+        const value = target[prop as keyof typeof target];
+        if (typeof value === 'function') {
+          return value.bind(target);
+        }
+        if (value && typeof value === 'object') {
+          return new Proxy(value, {
+            get(_innerTarget, innerProp) {
+              const innerValue = value[innerProp as keyof typeof value];
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              return typeof innerValue === 'function' ? (innerValue as any).bind(value) : innerValue;
+            }
+          });
+        }
+        return value;
+      }
+    });
+  }
+
+  return _dbProxy;
+}
+
+// Export as a getter to prevent initialization during build
 export const db = new Proxy({} as ReturnType<typeof initClient>, {
   get(_target, prop) {
-    const instance = getDb();
-    const value = instance[prop as keyof typeof instance];
-    // Bind functions to maintain correct 'this' context
-    if (typeof value === 'function') {
-      return value.bind(instance);
-    }
-    // For nested objects (like tx), return a proxy that also binds methods
-    if (value && typeof value === 'object') {
-      return new Proxy(value, {
-        get(_innerTarget, innerProp) {
-          const innerValue = value[innerProp as keyof typeof value];
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          return typeof innerValue === 'function' ? (innerValue as any).bind(value) : innerValue;
-        }
-      });
-    }
-    return value;
+    return getDbProxy()[prop as keyof ReturnType<typeof initClient>];
   }
 });
 
