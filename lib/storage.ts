@@ -112,7 +112,15 @@ export async function setCSVData(csvData: Map<string, CSVRow>, adminEmail: strin
     const now = Date.now();
     const createOps = Array.from(csvData.values()).map(row => {
       const recordId = id();
-      const record: Record<string, string | number> = {
+
+      // Build record matching schema exactly
+      const record: {
+        oldUsername: string;
+        newUsername: string;
+        npubKey?: string;
+        createdAt: number;
+        uploadedBy?: string;
+      } = {
         oldUsername: row.oldUsername,
         newUsername: row.newUsername,
         createdAt: now,
