@@ -152,7 +152,6 @@ export default function CSVUpload() {
         </p>
         <ul className="text-gray-400 text-sm space-y-1 list-disc list-inside">
           <li><span className="font-semibold text-white">old username</span> - User&apos;s old Bitmask username</li>
-          <li><span className="font-semibold text-white">telegram account</span> - User&apos;s Telegram handle</li>
           <li><span className="font-semibold text-white">new username</span> - User&apos;s new username</li>
           <li><span className="font-semibold text-accent">npub key</span> <span className="text-gray-500">(optional)</span> - User&apos;s nPUB key as alternative identifier</li>
         </ul>

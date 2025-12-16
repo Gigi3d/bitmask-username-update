@@ -25,10 +25,6 @@ const faqData: FAQItem[] = [
         answer: 'Yes! You can provide either your old Bitmask username OR your nPUB key in Step 1. At least one of these identifiers is required to proceed.',
     },
     {
-        question: 'Why do I need to verify my Telegram account?',
-        answer: 'Your Telegram account was associated with your campaign participation. We verify it to ensure the update request is legitimate and matches our records.',
-    },
-    {
         question: 'What happens after I submit?',
         answer: 'After submission, you\'ll receive a tracking ID. Your update will be processed within 24-48 hours, and you\'ll receive an email confirmation when complete. You can check your status anytime using the tracking ID.',
     },

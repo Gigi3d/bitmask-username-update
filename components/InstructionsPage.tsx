@@ -40,16 +40,6 @@ export default function InstructionsPage() {
                 2
               </div>
               <div className="flex-1">
-                <h2 className="text-xl font-bold mb-2 text-white">Verify your telegram account associated with the campaign</h2>
-                <p className="text-gray-300 text-base">Confirm your Telegram handle matches the one from the campaign</p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-5">
-              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-accent flex items-center justify-center text-black font-bold text-lg">
-                3
-              </div>
-              <div className="flex-1">
                 <h2 className="text-xl font-bold mb-2 text-white">Update your newly created mainnet bitmask wallet username</h2>
                 <p className="text-gray-300 text-base">Set your new username for the mainnet wallet</p>
               </div>

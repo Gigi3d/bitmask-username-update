@@ -108,7 +108,6 @@ This codebase has been optimized for performance and maintainability:
 ### Key Optimizations
 
 - Created `lib/apiHelpers.ts` for standardized API responses and error handling
-- Added `normalizeTelegramAccount()` utility (eliminated 5 duplicate instances)
 - Refactored all 5 API routes to use shared utilities (~20% code reduction)
 - Fixed duplicate variable declarations for better type safety
 - Improved code maintainability with consistent patterns

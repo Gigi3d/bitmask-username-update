@@ -15,7 +15,7 @@ describe('POST /api/users/verify-old-username', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({}),
       });
-      
+
       expect(response.status).toBe(400);
       const data = await response.json();
       expect(data.valid).toBe(false);
@@ -28,7 +28,7 @@ describe('POST /api/users/verify-old-username', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ oldUsername: 123 }),
       });
-      
+
       expect(response.status).toBe(400);
       const data = await response.json();
       expect(data.valid).toBe(false);
@@ -42,7 +42,7 @@ describe('POST /api/users/verify-old-username', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ oldUsername: 'nonexistent_user' }),
       });
-      
+
       const data = await response.json();
       expect(data.valid).toBe(false);
       expect(data.message).toContain('not found');
@@ -55,11 +55,9 @@ describe('POST /api/users/verify-old-username', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ oldUsername: 'existing_user' }),
       });
-      
+
       const data = await response.json();
       if (data.valid) {
-        expect(data.telegramAccounts).toBeDefined();
-        expect(Array.isArray(data.telegramAccounts)).toBe(true);
         expect(data.matchCount).toBeGreaterThan(0);
       }
     });
@@ -70,16 +68,16 @@ describe('POST /api/users/verify-old-username', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ oldUsername: 'TestUser' }),
       });
-      
+
       const response2 = await fetch('/api/users/verify-old-username', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ oldUsername: 'testuser' }),
       });
-      
+
       const data1 = await response1.json();
       const data2 = await response2.json();
-      
+
       expect(data1.valid).toBe(data2.valid);
     });
   });
@@ -92,7 +90,7 @@ describe('POST /api/users/verify-old-username', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ oldUsername: 'test' }),
       });
-      
+
       // Should not crash, should return error response
       expect(response.status).toBeLessThan(600);
     });

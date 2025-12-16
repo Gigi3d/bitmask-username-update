@@ -3,6 +3,7 @@
 ## Prerequisites
 
 Before you begin, ensure you have:
+
 - **Node.js** (v18 or higher) installed
 - **npm** (comes with Node.js)
 - An **InstantDB account** with your app configured
@@ -13,6 +14,7 @@ Before you begin, ensure you have:
 ### Step 1: Verify Environment File
 
 The `.env.local` file should already exist with:
+
 ```
 NEXT_PUBLIC_INSTANT_APP_ID=e183332d-f1ca-469a-a705-d24f4f39eb12
 ```
@@ -28,6 +30,7 @@ npm install
 ```
 
 This will install all required packages including:
+
 - Next.js
 - React
 - InstantDB packages
@@ -44,13 +47,11 @@ This will install all required packages including:
 
    **Entity: `csv_records`**
    - `oldUsername` (string)
-   - `telegramAccount` (string)
    - `newUsername` (string)
    - `createdAt` (number)
 
    **Entity: `user_updates`**
    - `oldUsername` (string)
-   - `telegramAccount` (string)
    - `newUsername` (string)
    - `submittedAt` (number)
 
@@ -70,6 +71,7 @@ npm run dev
 ```
 
 You should see output like:
+
 ```
 ▲ Next.js 16.0.3
 - Local:        http://localhost:3000
@@ -79,6 +81,7 @@ You should see output like:
 ### Step 5: Access the Application
 
 Open your browser and navigate to:
+
 ```
 http://localhost:3000
 ```
@@ -101,21 +104,14 @@ The application has two main user flows:
    - Enter the username you used during the campaign
    - Click "Next"
 
-3. **Step 2: Verify Telegram Account**
-   - Enter your Telegram account (e.g., `@username`)
-   - The system verifies it against campaign records
-   - Click "Next" if verified
-
-4. **Step 3: Enter New Username**
+3. **Step 2: Enter New Username**
    - Enter your new mainnet Bitmask username
    - The system validates it matches the expected value from records
    - Click "Submit"
 
-5. **Success Screen**
+4. **Success Screen**
    - Confirmation that your username has been updated
    - Shows old and new username
-
-**Note:** Users can only update if their Telegram account exists in the uploaded CSV records.
 
 ### 2. Admin Flow (Dashboard Management)
 
@@ -142,30 +138,34 @@ The application has two main user flows:
 Once logged in at `http://localhost:3000/admin/dashboard`, you can:
 
 **1. Upload CSV File**
-   - Click "Choose File" or drag and drop a CSV file
-   - CSV format should be:
+
+- Click "Choose File" or drag and drop a CSV file
+- CSV format should be:
+
      ```
-     oldUsername,telegramAccount,newUsername
-     user1,@telegram1,newuser1
-     user2,@telegram2,newuser2
+     oldUsername,newUsername
+     user1,newuser1
+     user2,newuser2
      ```
-   - Click "Upload CSV"
-   - The system will:
-     - Parse and validate the CSV
-     - Store records in InstantDB
-     - Show success message with row count
-     - Warn about any duplicate Telegram accounts
+
+- Click "Upload CSV"
+- The system will:
+  - Parse and validate the CSV
+  - Store records in InstantDB
+  - Show success message with row count
 
 **2. View Analytics**
-   - **Total Updates:** Number of username updates submitted
-   - **Updates Per Day:** Daily breakdown of updates
-   - **Updates Per Week:** Weekly aggregation
-   - **Success Rate:** Percentage of successful updates
-   - **Activity Timeline:** Visual chart of update activity
+
+- **Total Updates:** Number of username updates submitted
+- **Updates Per Day:** Daily breakdown of updates
+- **Updates Per Week:** Weekly aggregation
+- **Success Rate:** Percentage of successful updates
+- **Activity Timeline:** Visual chart of update activity
 
 **3. Logout**
-   - Click "Logout" button in the top right
-   - You'll be redirected to the login page
+
+- Click "Logout" button in the top right
+- You'll be redirected to the login page
 
 ## Application Structure
 
@@ -179,7 +179,6 @@ Once logged in at `http://localhost:3000/admin/dashboard`, you can:
 ### API Endpoints
 
 - `POST /api/users/update` - Submit username update
-- `POST /api/users/verify` - Verify Telegram account
 - `POST /api/csv/upload` - Upload CSV (admin only)
 - `GET /api/analytics/data` - Get analytics data
 
@@ -188,6 +187,7 @@ Once logged in at `http://localhost:3000/admin/dashboard`, you can:
 ### Issue: "NEXT_PUBLIC_INSTANT_APP_ID is not set"
 
 **Solution:**
+
 - Verify `.env.local` exists in the root directory
 - Check the file contains: `NEXT_PUBLIC_INSTANT_APP_ID=e183332d-f1ca-469a-a705-d24f4f39eb12`
 - Restart the development server after creating/modifying `.env.local`
@@ -195,22 +195,17 @@ Once logged in at `http://localhost:3000/admin/dashboard`, you can:
 ### Issue: Magic Code Not Received
 
 **Solutions:**
+
 1. Check spam/junk folder
 2. Verify email is configured in InstantDB dashboard
 3. Check InstantDB dashboard for email delivery settings
 4. Wait a few minutes and try again
 5. Check browser console for errors
 
-### Issue: "Telegram account not found in campaign records"
-
-**Solution:**
-- Admin must upload CSV file first via `/admin/dashboard`
-- Ensure CSV contains the user's Telegram account
-- Verify CSV format is correct (oldUsername,telegramAccount,newUsername)
-
 ### Issue: Build/Compilation Errors
 
 **Solutions:**
+
 1. Delete `node_modules` and `package-lock.json`
 2. Run `npm install` again
 3. Clear Next.js cache: `rm -rf .next`
@@ -219,6 +214,7 @@ Once logged in at `http://localhost:3000/admin/dashboard`, you can:
 ### Issue: Database Connection Errors
 
 **Solutions:**
+
 1. Verify InstantDB App ID is correct
 2. Check your internet connection
 3. Verify schema is configured in InstantDB dashboard
@@ -227,6 +223,7 @@ Once logged in at `http://localhost:3000/admin/dashboard`, you can:
 ### Issue: Port 3000 Already in Use
 
 **Solution:**
+
 ```bash
 # Kill the process using port 3000
 lsof -ti:3000 | xargs kill -9
@@ -262,8 +259,8 @@ npm run lint
    - Verify data appears in InstantDB dashboard
 
 2. **Test the User Flow:**
-   - Use a Telegram account from your CSV
-   - Complete the 3-step update process
+   - Use a username from your CSV
+   - Complete the 2-step update process
    - Verify the update appears in analytics
 
 3. **Monitor Analytics:**
@@ -283,7 +280,7 @@ When ready for production:
 ## Support
 
 For issues specific to:
+
 - **InstantDB:** Check [InstantDB Documentation](https://www.instantdb.com/docs)
 - **Next.js:** Check [Next.js Documentation](https://nextjs.org/docs)
 - **Application Issues:** Review error messages in browser console and server logs
-

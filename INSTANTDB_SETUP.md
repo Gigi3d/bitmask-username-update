@@ -1,6 +1,7 @@
 # InstantDB Integration - Setup Guide
 
 ## Overview
+
 This application has been fully integrated with InstantDB for authentication and database storage. All in-memory storage has been replaced with persistent InstantDB operations.
 
 ## Environment Setup
@@ -14,6 +15,7 @@ NEXT_PUBLIC_INSTANT_APP_ID=e183332d-f1ca-469a-a705-d24f4f39eb12
 ```
 
 ### Optional (for production)
+
 ```bash
 INSTANT_ADMIN_TOKEN=your-admin-token-here
 ```
@@ -28,13 +30,11 @@ The application uses the following InstantDB schema:
 
 1. **csv_records**
    - `oldUsername` (string)
-   - `telegramAccount` (string)
    - `newUsername` (string)
    - `createdAt` (number)
 
 2. **user_updates**
    - `oldUsername` (string)
-   - `telegramAccount` (string)
    - `newUsername` (string)
    - `submittedAt` (number)
 
@@ -81,6 +81,7 @@ All API routes have been migrated to use InstantDB:
 ## Development
 
 1. Install dependencies:
+
    ```bash
    npm install
    ```
@@ -88,6 +89,7 @@ All API routes have been migrated to use InstantDB:
 2. Set up `.env.local` with your InstantDB App ID
 
 3. Run the development server:
+
    ```bash
    npm run dev
    ```
@@ -101,11 +103,13 @@ All API routes have been migrated to use InstantDB:
    - `INSTANT_ADMIN_TOKEN` (recommended for production)
 
 2. Build the application:
+
    ```bash
    npm run build
    ```
 
 3. Start the production server:
+
    ```bash
    npm start
    ```
@@ -121,17 +125,20 @@ All API routes have been migrated to use InstantDB:
 ## Troubleshooting
 
 ### Build Errors
+
 If you encounter TypeScript errors related to the schema, ensure:
+
 - The schema structure matches InstantDB's expected format
 - All required properties (entities, links, rooms) are defined
 
 ### Authentication Issues
+
 - Verify your InstantDB App ID is correct
 - Check that email delivery is configured in your InstantDB dashboard
 - Ensure the magic code hasn't expired (typically 10-15 minutes)
 
 ### Database Connection
+
 - Verify your App ID is correct
 - Check network connectivity
 - Review InstantDB dashboard for any service issues
-

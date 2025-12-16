@@ -85,7 +85,7 @@ export default function SearchFilter<T extends Record<string, unknown>>({ data, 
                         type="text"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        placeholder="Search by username, telegram, etc..."
+                        placeholder="Search by username, etc..."
                         className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:border-accent"
                     />
                 </div>
