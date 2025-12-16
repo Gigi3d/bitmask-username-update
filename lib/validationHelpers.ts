@@ -71,17 +71,9 @@ export const ValidationErrors = {
         invalidChars: 'nPUB key contains invalid characters (only lowercase letters and numbers, excluding 1, b, i, o)',
         invalid: 'Invalid nPUB key format',
     },
-    telegram: {
-        empty: 'Telegram handle is required',
-        tooShort: 'Telegram handle must be at least 5 characters',
-        tooLong: 'Telegram handle must be 32 characters or less',
-        invalidChars: 'Telegram handle can only contain letters, numbers, and underscores',
-        invalid: 'Invalid Telegram handle format',
-    },
     identifier: {
         empty: 'Please enter your old username or nPUB key',
         notFound: 'This identifier was not found in our campaign records',
-        mismatch: 'This identifier does not match the Telegram account provided',
     },
 };
 
@@ -171,51 +163,4 @@ export function validateNpubKeyDetailed(npubKey: string): {
     return { isValid: true };
 }
 
-/**
- * Enhanced Telegram validation with detailed errors
- */
-export function validateTelegramDetailed(handle: string): {
-    isValid: boolean;
-    error?: string;
-    suggestions?: string[];
-} {
-    if (!handle || typeof handle !== 'string') {
-        return {
-            isValid: false,
-            error: ValidationErrors.telegram.empty,
-        };
-    }
 
-    const trimmed = handle.trim();
-    const cleanHandle = trimmed.startsWith('@') ? trimmed.slice(1) : trimmed;
-
-    if (cleanHandle.length < 5) {
-        return {
-            isValid: false,
-            error: ValidationErrors.telegram.tooShort,
-            suggestions: ['Telegram handles must be at least 5 characters'],
-        };
-    }
-
-    if (cleanHandle.length > 32) {
-        return {
-            isValid: false,
-            error: ValidationErrors.telegram.tooLong,
-            suggestions: ['Telegram handles can be maximum 32 characters'],
-        };
-    }
-
-    const telegramRegex = /^[a-zA-Z0-9_]{5,32}$/;
-    if (!telegramRegex.test(cleanHandle)) {
-        return {
-            isValid: false,
-            error: ValidationErrors.telegram.invalidChars,
-            suggestions: [
-                'Use only letters, numbers, and underscores',
-                'Remove spaces and special characters',
-            ],
-        };
-    }
-
-    return { isValid: true };
-}

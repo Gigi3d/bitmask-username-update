@@ -16,19 +16,6 @@ export function validateUsername(username: string): boolean {
 }
 
 /**
- * Normalize Telegram account handle
- * Removes @ symbol and converts to lowercase for consistent lookups
- * @param telegramAccount - Telegram handle to normalize (with or without @)
- * @returns Normalized telegram account (lowercase, no @)
- */
-export function normalizeTelegramAccount(telegramAccount: string): string {
-    if (!telegramAccount || typeof telegramAccount !== 'string') {
-        return '';
-    }
-    return telegramAccount.toLowerCase().replace('@', '');
-}
-
-/**
  * Validate nPUB key format
  * nPUB keys should start with "npub1" and be 63 characters long
  * Example: npub1jlyep8ew8l4gp9vl44dv422czapfeue9s3msxdj6uvnverl3yuyqjs8tqf
@@ -97,33 +84,13 @@ export function validateIdentifier(identifier: string): {
 }
 
 /**
- * Validate Telegram handle format
- * @param handle - Telegram handle to validate (with or without @)
- * @returns true if valid, false otherwise
- */
-export function validateTelegramHandle(handle: string): boolean {
-    if (!handle || typeof handle !== 'string') {
-        return false;
-    }
-
-    const trimmed = handle.trim();
-    // Remove @ if present
-    const cleanHandle = trimmed.startsWith('@') ? trimmed.slice(1) : trimmed;
-
-    // Telegram usernames must be 5-32 characters and can only contain letters, numbers, and underscores
-    const telegramRegex = /^[a-zA-Z0-9_]{5,32}$/;
-    return telegramRegex.test(cleanHandle);
-}
-
-/**
  * Parse CSV content into CSVRow array
- * Expected columns: old username, telegram account, new username, npub key (optional)
+ * Expected columns: old username, new username, npub key (optional)
  * @param csvContent - Raw CSV file content as string
  * @returns Array of CSVRow objects
  */
 export function parseCSV(csvContent: string): Array<{
     oldUsername: string;
-    telegramAccount: string;
     newUsername: string;
     npubKey?: string;
 }> {
@@ -146,9 +113,6 @@ export function parseCSV(csvContent: string): Array<{
     const oldUsernameIndex = headers.findIndex(h =>
         h.includes('old') && h.includes('username')
     );
-    const telegramIndex = headers.findIndex(h =>
-        h.includes('telegram') || h.includes('tg')
-    );
     const newUsernameIndex = headers.findIndex(h =>
         h.includes('new') && h.includes('username')
     );
@@ -157,10 +121,10 @@ export function parseCSV(csvContent: string): Array<{
     );
 
     // Validate required columns exist
-    if (oldUsernameIndex === -1 || telegramIndex === -1 || newUsernameIndex === -1) {
+    if (oldUsernameIndex === -1 || newUsernameIndex === -1) {
         throw new Error(
             `CSV must have required columns. Found headers: ${headerLine}\n` +
-            `Required: "old username", "telegram account", "new username"\n` +
+            `Required: "old username", "new username"\n` +
             `Optional: "npub key"`
         );
     }
@@ -168,7 +132,6 @@ export function parseCSV(csvContent: string): Array<{
     // Parse data rows
     const rows: Array<{
         oldUsername: string;
-        telegramAccount: string;
         newUsername: string;
         npubKey?: string;
     }> = [];
@@ -181,24 +144,20 @@ export function parseCSV(csvContent: string): Array<{
 
         // Get values from columns
         const oldUsername = values[oldUsernameIndex] || '';
-        const telegramAccount = values[telegramIndex] || '';
         const newUsername = values[newUsernameIndex] || '';
         const npubKey = npubKeyIndex !== -1 ? values[npubKeyIndex] : undefined;
 
-        // Skip rows where telegram account is empty (required field)
-        if (!telegramAccount) {
+        // Skip rows where oldUsername is empty (required field)
+        if (!oldUsername) {
             continue;
         }
 
-        // Add row (oldUsername can be empty if npubKey is provided)
-        if (oldUsername || npubKey) {
-            rows.push({
-                oldUsername,
-                telegramAccount,
-                newUsername,
-                ...(npubKey && { npubKey }),
-            });
-        }
+        // Add row
+        rows.push({
+            oldUsername,
+            newUsername,
+            ...(npubKey && { npubKey }),
+        });
     }
 
     return rows;

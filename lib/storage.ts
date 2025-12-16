@@ -1,7 +1,6 @@
 import { getAdminDb } from './instantdb';
 import { id } from '@instantdb/admin';
-import { CSVRow, UserUpdateData, CSVRecord, UserUpdate, AdminUserRecord } from '@/types';
-import { normalizeTelegramAccount } from './utils';
+import { CSVRow, UserUpdateData, CSVRecord, UserUpdate, AdminUserRecord, UserUpdateAttempts } from '@/types';
 
 // Type for InstantDB query results (dynamic structure)
 type InstantDBQueryResult = {
@@ -17,7 +16,7 @@ type InstantDBQueryResult = {
  * Get CSV data from InstantDB
  * @param includeAll - If true, returns all CSV records. If false, filters by adminEmail
  * @param adminEmail - Optional admin email to filter CSV records
- * @returns Map of normalized telegram account -> CSVRow
+ * @returns Map of oldUsername -> CSVRow
  */
 export async function getCSVData(includeAll: boolean = true, adminEmail?: string): Promise<Map<string, CSVRow>> {
   const db = getAdminDb();
@@ -39,7 +38,7 @@ export async function getCSVData(includeAll: boolean = true, adminEmail?: string
 
     for (const record of records) {
       // Type guard: ensure required fields exist
-      if (!record.telegramAccount || !record.oldUsername) {
+      if (!record.oldUsername) {
         continue;
       }
 
@@ -51,17 +50,13 @@ export async function getCSVData(includeAll: boolean = true, adminEmail?: string
         }
       }
 
-      // Normalize telegram account for map key
-      const telegramAccount = typeof record.telegramAccount === 'string' ? record.telegramAccount : '';
       const oldUsername = typeof record.oldUsername === 'string' ? record.oldUsername : '';
       const newUsername = typeof record.newUsername === 'string' ? record.newUsername : '';
       const npubKey = typeof record.npubKey === 'string' ? record.npubKey : undefined;
-      // Normalize telegram account for consistent lookups
-      const normalizedAccount = normalizeTelegramAccount(telegramAccount);
 
-      csvMap.set(normalizedAccount, {
+      // Use oldUsername as the map key (no more Telegram dependency)
+      csvMap.set(oldUsername.toLowerCase(), {
         oldUsername,
-        telegramAccount,
         newUsername,
         npubKey,
       });
@@ -79,7 +74,7 @@ export async function getCSVData(includeAll: boolean = true, adminEmail?: string
 /**
  * Set CSV data in InstantDB
  * Replaces all existing CSV records for the given admin email
- * @param csvData - Map of normalized telegram account -> CSVRow
+ * @param csvData - Map of oldUsername -> CSVRow
  * @param adminEmail - Email of the admin who uploaded the CSV
  */
 export async function setCSVData(csvData: Map<string, CSVRow>, adminEmail: string): Promise<void> {
@@ -119,7 +114,6 @@ export async function setCSVData(csvData: Map<string, CSVRow>, adminEmail: strin
       const recordId = id();
       return db.tx.csv_records[recordId].create({
         oldUsername: row.oldUsername,
-        telegramAccount: row.telegramAccount,
         newUsername: row.newUsername,
         npubKey: row.npubKey,
         createdAt: now,
@@ -152,11 +146,16 @@ export async function addUserUpdate(updateData: UserUpdateData): Promise<{ succe
     await db.transact([
       db.tx.user_updates[recordId].create({
         oldUsername: updateData.oldUsername,
-        telegramAccount: updateData.telegramAccount,
         newUsername: updateData.newUsername,
         npubKey: updateData.npubKey || null,
         trackingId: updateData.trackingId || null,
         submittedAt: updateData.submittedAt || now,
+        // 3-Attempt tracking fields
+        updateAttemptCount: updateData.updateAttemptCount,
+        firstNewUsername: updateData.firstNewUsername || null,
+        secondNewUsername: updateData.secondNewUsername || null,
+        thirdNewUsername: updateData.thirdNewUsername || null,
+        lastUpdatedAt: updateData.lastUpdatedAt || now,
       })
     ]);
 
@@ -173,17 +172,13 @@ export async function addUserUpdate(updateData: UserUpdateData): Promise<{ succe
 }
 
 /**
- * Check if a user update already exists
+ * Check if a user can still make updates (hasn't reached 3-attempt limit)
  * @param oldUsername - Old username to check
- * @param telegramAccount - Telegram account to check
- * @param npubKey - Optional nPUB key to check
- * @returns true if duplicate exists, false otherwise
+ * @returns Object with canUpdate boolean, attempt count, and remaining attempts
  */
-export async function checkDuplicateUpdate(
-  oldUsername: string,
-  telegramAccount: string,
-  npubKey?: string
-): Promise<boolean> {
+export async function canUserUpdate(
+  oldUsername: string
+): Promise<{ canUpdate: boolean; attemptCount: number; remainingAttempts: number }> {
   const db = getAdminDb();
 
   try {
@@ -192,28 +187,42 @@ export async function checkDuplicateUpdate(
     const result = await db.query(query) as InstantDBQueryResult;
 
     if (!result?.user_updates) {
-      return false;
+      return { canUpdate: true, attemptCount: 0, remainingAttempts: 3 };
     }
 
     const rawUpdates = Array.isArray(result.user_updates)
       ? result.user_updates
       : Object.values(result.user_updates);
 
-    // Check if any existing update matches
+    // Find the latest update for this user
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return rawUpdates.some((update: any) => {
-      const matchesTelegram = update.telegramAccount === telegramAccount;
-      const matchesUsername = update.oldUsername === oldUsername;
-      const matchesNpub = npubKey && update.npubKey ? update.npubKey === npubKey : false;
+    const userUpdates = rawUpdates.filter((update: any) =>
+      update.oldUsername?.toLowerCase() === oldUsername.toLowerCase()
+    );
 
-      return matchesTelegram && (matchesUsername || matchesNpub);
+    if (userUpdates.length === 0) {
+      return { canUpdate: true, attemptCount: 0, remainingAttempts: 3 };
+    }
+
+    // Get the most recent update to check attempt count
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const latestUpdate = userUpdates.reduce((latest: any, current: any) => {
+      return (current.lastUpdatedAt || current.submittedAt) > (latest.lastUpdatedAt || latest.submittedAt)
+        ? current
+        : latest;
     });
+
+    const attemptCount = latestUpdate.updateAttemptCount || 0;
+    const canUpdate = attemptCount < 3;
+    const remainingAttempts = Math.max(0, 3 - attemptCount);
+
+    return { canUpdate, attemptCount, remainingAttempts };
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {
-      console.error('Error checking duplicate update:', error);
+      console.error('Error checking user update limit:', error);
     }
-    // On error, assume no duplicate (fail open)
-    return false;
+    // On error, allow update (fail open)
+    return { canUpdate: true, attemptCount: 0, remainingAttempts: 3 };
   }
 }
 
@@ -244,7 +253,6 @@ export async function getUserUpdates(): Promise<UserUpdate[]> {
           update &&
           typeof (update as UserUpdate).id === 'string' &&
           typeof (update as UserUpdate).oldUsername === 'string' &&
-          typeof (update as UserUpdate).telegramAccount === 'string' &&
           typeof (update as UserUpdate).newUsername === 'string' &&
           typeof (update as UserUpdate).submittedAt === 'number'
         );
@@ -252,9 +260,16 @@ export async function getUserUpdates(): Promise<UserUpdate[]> {
       .map((update: UserUpdate) => ({
         id: update.id,
         oldUsername: update.oldUsername,
-        telegramAccount: update.telegramAccount,
         newUsername: update.newUsername,
+        npubKey: update.npubKey,
         submittedAt: update.submittedAt,
+        // 3-Attempt tracking fields
+        updateAttemptCount: update.updateAttemptCount || 1,
+        firstNewUsername: update.firstNewUsername,
+        secondNewUsername: update.secondNewUsername,
+        thirdNewUsername: update.thirdNewUsername,
+        lastUpdatedAt: update.lastUpdatedAt || update.submittedAt,
+        trackingId: update.trackingId,
       }));
 
     return updates;
@@ -263,6 +278,109 @@ export async function getUserUpdates(): Promise<UserUpdate[]> {
       console.error('Error fetching user updates:', error);
     }
     throw new Error('Failed to fetch user updates');
+  }
+}
+
+/**
+ * Get a user's update attempt history
+ * @param oldUsername - User's old username
+ * @returns UserUpdateAttempts object with attempt history
+ */
+export async function getUserUpdateAttempts(
+  oldUsername: string
+): Promise<UserUpdateAttempts> {
+  const db = getAdminDb();
+
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const query: any = { user_updates: {} };
+    const result = await db.query(query) as InstantDBQueryResult;
+
+    if (!result?.user_updates) {
+      return {
+        oldUsername,
+        attemptCount: 0,
+        attempts: [],
+        canUpdate: true,
+        remainingAttempts: 3,
+      };
+    }
+
+    const rawUpdates = Array.isArray(result.user_updates)
+      ? result.user_updates
+      : Object.values(result.user_updates);
+
+    // Find all updates for this user
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const userUpdates = rawUpdates.filter((update: any) =>
+      update.oldUsername?.toLowerCase() === oldUsername.toLowerCase()
+    );
+
+    if (userUpdates.length === 0) {
+      return {
+        oldUsername,
+        attemptCount: 0,
+        attempts: [],
+        canUpdate: true,
+        remainingAttempts: 3,
+      };
+    }
+
+    // Get the most recent update
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const latestUpdate = userUpdates.reduce((latest: any, current: any) => {
+      return (current.lastUpdatedAt || current.submittedAt) > (latest.lastUpdatedAt || latest.submittedAt)
+        ? current
+        : latest;
+    });
+
+    const attemptCount = latestUpdate.updateAttemptCount || 0;
+    const attempts = [];
+
+    // Build attempts array from the latest update
+    if (latestUpdate.firstNewUsername) {
+      attempts.push({
+        attemptNumber: 1,
+        username: latestUpdate.firstNewUsername,
+        timestamp: latestUpdate.submittedAt,
+      });
+    }
+    if (latestUpdate.secondNewUsername) {
+      attempts.push({
+        attemptNumber: 2,
+        username: latestUpdate.secondNewUsername,
+        timestamp: latestUpdate.lastUpdatedAt || latestUpdate.submittedAt,
+      });
+    }
+    if (latestUpdate.thirdNewUsername) {
+      attempts.push({
+        attemptNumber: 3,
+        username: latestUpdate.thirdNewUsername,
+        timestamp: latestUpdate.lastUpdatedAt || latestUpdate.submittedAt,
+      });
+    }
+
+    const canUpdate = attemptCount < 3;
+    const remainingAttempts = Math.max(0, 3 - attemptCount);
+
+    return {
+      oldUsername,
+      attemptCount,
+      attempts,
+      canUpdate,
+      remainingAttempts,
+    };
+  } catch (error) {
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Error fetching user update attempts:', error);
+    }
+    return {
+      oldUsername,
+      attemptCount: 0,
+      attempts: [],
+      canUpdate: true,
+      remainingAttempts: 3,
+    };
   }
 }
 

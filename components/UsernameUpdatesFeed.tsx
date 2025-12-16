@@ -6,9 +6,10 @@ import { db } from '@/lib/instantdb';
 interface UserUpdate {
   id: string;
   oldUsername: string;
-  telegramAccount: string;
   newUsername: string;
   submittedAt: number;
+  updateAttemptCount?: number;
+  lastUpdatedAt?: number;
 }
 
 export default function UsernameUpdatesFeed() {
@@ -24,7 +25,7 @@ export default function UsernameUpdatesFeed() {
       : Object.values(updatesData.user_updates);
 
     return (updatesArray as UserUpdate[])
-      .sort((a, b) => b.submittedAt - a.submittedAt)
+      .sort((a, b) => (b.lastUpdatedAt || b.submittedAt) - (a.lastUpdatedAt || a.submittedAt))
       .slice(0, 50); // Show latest 50 updates
   }, [updatesData]);
 
@@ -40,7 +41,7 @@ export default function UsernameUpdatesFeed() {
     if (diffMins < 60) return `${diffMins}m ago`;
     if (diffHours < 24) return `${diffHours}h ago`;
     if (diffDays < 7) return `${diffDays}d ago`;
-    
+
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined });
   };
 
@@ -69,10 +70,17 @@ export default function UsernameUpdatesFeed() {
                     <span className="text-white font-semibold">{update.oldUsername}</span>
                     <span className="text-gray-500">→</span>
                     <span className="text-accent font-bold">{update.newUsername}</span>
+                    {update.updateAttemptCount && update.updateAttemptCount > 1 && (
+                      <span className="text-xs bg-accent/20 text-accent px-2 py-1 rounded">
+                        Update #{update.updateAttemptCount}
+                      </span>
+                    )}
                   </div>
                   <div className="flex items-center gap-4 text-sm text-gray-400">
-                    <span>📱 {update.telegramAccount}</span>
-                    <span>🕐 {formatDate(update.submittedAt)}</span>
+                    <span>🕐 {formatDate(update.lastUpdatedAt || update.submittedAt)}</span>
+                    <span className="text-xs">
+                      {update.updateAttemptCount || 1} of 3 attempts
+                    </span>
                   </div>
                 </div>
               </div>

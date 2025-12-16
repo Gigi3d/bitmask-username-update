@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { showToast } from './Toast';
 import Tooltip from './Tooltip';
 
@@ -8,10 +8,36 @@ interface SuccessMessageProps {
   oldUsername: string;
   newUsername: string;
   trackingId?: string;
+  attemptNumber?: number;
+  remainingAttempts?: number;
 }
 
-export default function SuccessMessage({ oldUsername, newUsername, trackingId }: SuccessMessageProps) {
+export default function SuccessMessage({ oldUsername, newUsername, trackingId, attemptNumber, remainingAttempts }: SuccessMessageProps) {
   const [copied, setCopied] = useState(false);
+  const [attempts, setAttempts] = useState({ current: attemptNumber || 1, remaining: remainingAttempts ?? 2 });
+
+  useEffect(() => {
+    // If not provided via props, fetch from API
+    if (attemptNumber === undefined && oldUsername) {
+      fetch('/api/users/check-attempts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ oldUsername }),
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.attemptCount !== undefined) {
+            setAttempts({
+              current: data.attemptCount,
+              remaining: 3 - data.attemptCount,
+            });
+          }
+        })
+        .catch(() => {
+          // Silently fail, use defaults
+        });
+    }
+  }, [oldUsername, attemptNumber]);
 
   const twitterMessage = `Just updated my BitMask wallet username to ${newUsername} for RGB protocol on Bitcoin mainnet! 🚀
 
@@ -67,6 +93,25 @@ Bitcoin Native Finance is here @BitMask_App
         <h2 className="text-3xl font-bold mb-4">Your account has been updated!</h2>
         <p className="text-gray-300 text-lg">
           Your username has been successfully updated from <span className="font-semibold text-accent">{oldUsername}</span> to <span className="font-semibold text-accent">{newUsername}</span>
+        </p>
+      </div>
+
+      {/* Attempts Remaining Notice */}
+      <div className={`border rounded-lg p-4 mb-6 ${attempts.remaining > 0 ? 'bg-blue-900/20 border-blue-700/50' : 'bg-red-900/20 border-red-700/50'}`}>
+        <div className="flex items-center justify-center gap-2 mb-2">
+          <span className={`text-lg font-semibold ${attempts.remaining > 0 ? 'text-blue-300' : 'text-red-300'}`}>
+            Update Attempt {attempts.current} of 3
+          </span>
+          <Tooltip content="You can update your username up to 3 times total">
+            <span className="text-gray-400 cursor-help text-sm">ℹ️</span>
+          </Tooltip>
+        </div>
+        <p className={`text-sm ${attempts.remaining > 0 ? 'text-blue-200' : 'text-red-200'}`}>
+          {attempts.remaining > 0 ? (
+            <>You have <strong>{attempts.remaining}</strong> {attempts.remaining === 1 ? 'update' : 'updates'} remaining</>
+          ) : (
+            <>You have used all 3 updates. No further changes are allowed.</>
+          )}
         </p>
       </div>
 

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdminAuth } from '@/lib/auth';
-import { parseCSV, normalizeTelegramAccount } from '@/lib/utils';
+import { parseCSV } from '@/lib/utils';
 import { setCSVData } from '@/lib/storage';
 import { CSVRow } from '@/types';
 import { handleApiError, createValidationError } from '@/lib/apiHelpers';
@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
       if (errorMessage.includes('columns')) {
         const lines = csvContent.trim().split(/\r?\n|\r/);
         const headers = lines[0] || '';
-        detailedError = `${errorMessage}\n\nFound headers: ${headers}\n\nExpected headers should include:\n- A column with "old" and "username"\n- A column with "telegram" or "tg"\n- A column with "new" and "username"`;
+        detailedError = `${errorMessage}\n\nFound headers: ${headers}\n\nExpected headers should include:\n- A column with "old" and "username"\n- A column with "new" and "username"`;
       }
 
       return NextResponse.json(
@@ -124,20 +124,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Convert to Map format (keyed by normalized telegram account)
+    // Convert to Map format (keyed by oldUsername)
     const csvDataMap = new Map<string, CSVRow>();
-    const duplicateAccounts: string[] = [];
+    const duplicateUsernames: string[] = [];
 
     for (const row of parsedRows) {
-      // Normalize telegram account
-      const normalizedAccount = normalizeTelegramAccount(row.telegramAccount);
+      // Use oldUsername as key (lowercase for consistency)
+      const key = row.oldUsername.toLowerCase();
 
       // Check for duplicates
-      if (csvDataMap.has(normalizedAccount)) {
-        duplicateAccounts.push(row.telegramAccount);
+      if (csvDataMap.has(key)) {
+        duplicateUsernames.push(row.oldUsername);
       }
 
-      csvDataMap.set(normalizedAccount, row);
+      csvDataMap.set(key, row);
     }
 
     // Store in InstantDB with admin email for scoping
@@ -159,15 +159,15 @@ export async function POST(request: NextRequest) {
 
     // Build response message
     let message = `CSV uploaded successfully. ${csvDataMap.size} rows processed.`;
-    if (duplicateAccounts.length > 0) {
-      message += ` Warning: ${duplicateAccounts.length} duplicate telegram account(s) found: ${duplicateAccounts.slice(0, 5).join(', ')}${duplicateAccounts.length > 5 ? '...' : ''}. Only the last occurrence was kept.`;
+    if (duplicateUsernames.length > 0) {
+      message += ` Warning: ${duplicateUsernames.length} duplicate username(s) found: ${duplicateUsernames.slice(0, 5).join(', ')}${duplicateUsernames.length > 5 ? '...' : ''}. Only the last occurrence was kept.`;
     }
 
     return NextResponse.json({
       message,
       rowCount: csvDataMap.size,
-      ...(duplicateAccounts.length > 0 && {
-        warnings: `Warning: ${duplicateAccounts.length} duplicate telegram account(s) found. Only the last occurrence was kept.`
+      ...(duplicateUsernames.length > 0 && {
+        warnings: `Warning: ${duplicateUsernames.length} duplicate username(s) found. Only the last occurrence was kept.`
       })
     }, {
       headers: {
@@ -178,4 +178,3 @@ export async function POST(request: NextRequest) {
     return handleApiError(error, 500, 'Failed to upload CSV');
   }
 }
-

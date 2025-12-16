@@ -3,7 +3,6 @@
 import { useState, useCallback } from 'react';
 import StepIndicator from './StepIndicator';
 import Step1Form from './Step1Form';
-import Step2Form from './Step2Form';
 import Step3Form from './Step3Form';
 import ReviewStep from './ReviewStep';
 import SuccessMessage from './SuccessMessage';
@@ -19,38 +18,34 @@ function generateTrackingId(): string {
 export default function UpdateFlow() {
   const [currentStep, setCurrentStep] = useState(1);
   const [trackingId, setTrackingId] = useState<string>('');
+  const [attemptInfo, setAttemptInfo] = useState<{ attemptNumber?: number; remainingAttempts?: number }>({});
   const [formData, setFormData] = useState({
     oldUsername: '',
-    telegramAccount: '',
     newUsername: '',
     npubKey: undefined as string | undefined,
   });
 
   const handleStep1Next = useCallback((identifier: string, npubKey?: string) => {
     setFormData(prev => ({ ...prev, oldUsername: identifier, npubKey }));
-    setCurrentStep(2);
-  }, []);
-
-  const handleStep2Next = useCallback((telegramAccount: string) => {
-    setFormData(prev => ({ ...prev, telegramAccount }));
-    setCurrentStep(3);
-  }, []);
-
-  const handleStep2Back = useCallback(() => {
-    setCurrentStep(1);
+    setCurrentStep(2); // Go directly to Step3 (new username entry)
   }, []);
 
   const handleStep3Next = useCallback((newUsername: string) => {
     setFormData(prev => ({ ...prev, newUsername }));
-    setCurrentStep(4); // Go to review step
+    setCurrentStep(3); // Go to review step
   }, []);
 
   const handleStep3Back = useCallback(() => {
-    setCurrentStep(2);
+    setCurrentStep(1);
   }, []);
 
   const handleReviewEdit = useCallback((step: number) => {
-    setCurrentStep(step);
+    // Map review edit steps: step 1 = old username, step 2 = new username
+    if (step === 1) {
+      setCurrentStep(1);
+    } else if (step === 2) {
+      setCurrentStep(2);
+    }
   }, []);
 
   const handleReviewConfirm = async () => {
@@ -60,7 +55,6 @@ export default function UpdateFlow() {
 
       const updatePayload = {
         oldUsername: formData.oldUsername,
-        telegramAccount: formData.telegramAccount,
         newUsername: formData.newUsername,
         npubKey: formData.npubKey,
         trackingId: newTrackingId,
@@ -90,10 +84,18 @@ export default function UpdateFlow() {
         console.log('✅ Username update successful');
       }
 
+      // Capture attempt information from response
+      if (data.attemptNumber !== undefined && data.remainingAttempts !== undefined) {
+        setAttemptInfo({
+          attemptNumber: data.attemptNumber,
+          remainingAttempts: data.remainingAttempts,
+        });
+      }
+
       // Update state and clear form data
       setTrackingId(newTrackingId);
       clearFormData(); // Clear saved form data from localStorage
-      setCurrentStep(5); // Success screen
+      setCurrentStep(4); // Success screen
     } catch (error) {
       if (process.env.NODE_ENV === 'development') {
         console.error('❌ Error updating username:', error);
@@ -106,12 +108,12 @@ export default function UpdateFlow() {
   return (
     <div className="min-h-screen bg-black flex items-center justify-center px-4 py-12">
       <div className="max-w-3xl w-full">
-        {currentStep < 5 && (
+        {currentStep < 4 && (
           <>
             <h1 className="text-3xl md:text-4xl font-bold text-center mb-8">
               Update Your Bitmask Username
             </h1>
-            {currentStep < 4 && <StepIndicator currentStep={currentStep} />}
+            {currentStep < 3 && <StepIndicator currentStep={currentStep} />}
           </>
         )}
 
@@ -124,15 +126,6 @@ export default function UpdateFlow() {
           )}
 
           {currentStep === 2 && (
-            <Step2Form
-              onNext={handleStep2Next}
-              onBack={handleStep2Back}
-              oldUsername={formData.oldUsername}
-              initialValue={formData.telegramAccount}
-            />
-          )}
-
-          {currentStep === 3 && (
             <Step3Form
               onSubmit={handleStep3Next}
               onBack={handleStep3Back}
@@ -140,7 +133,7 @@ export default function UpdateFlow() {
             />
           )}
 
-          {currentStep === 4 && (
+          {currentStep === 3 && (
             <ReviewStep
               formData={formData}
               onConfirm={handleReviewConfirm}
@@ -148,11 +141,13 @@ export default function UpdateFlow() {
             />
           )}
 
-          {currentStep === 5 && (
+          {currentStep === 4 && (
             <SuccessMessage
               oldUsername={formData.oldUsername}
               newUsername={formData.newUsername}
               trackingId={trackingId}
+              attemptNumber={attemptInfo.attemptNumber}
+              remainingAttempts={attemptInfo.remainingAttempts}
             />
           )}
         </div>

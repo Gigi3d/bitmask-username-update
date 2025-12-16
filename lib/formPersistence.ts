@@ -9,7 +9,6 @@ const EXPIRY_HOURS = 24; // Form data expires after 24 hours
 
 export interface FormData {
     oldUsername: string;
-    telegramAccount: string;
     newUsername: string;
     npubKey?: string;
     currentStep: number;

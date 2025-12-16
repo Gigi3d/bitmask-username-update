@@ -49,8 +49,12 @@ export async function POST(request: NextRequest) {
             submission: {
                 oldUsername: submission.oldUsername,
                 newUsername: submission.newUsername,
-                telegramAccount: submission.telegramAccount,
                 submittedAt: submission.submittedAt,
+                updateAttemptCount: submission.updateAttemptCount,
+                firstNewUsername: submission.firstNewUsername,
+                secondNewUsername: submission.secondNewUsername,
+                thirdNewUsername: submission.thirdNewUsername,
+                lastUpdatedAt: submission.lastUpdatedAt,
                 status,
             },
         });

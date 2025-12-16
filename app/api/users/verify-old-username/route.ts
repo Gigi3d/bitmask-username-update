@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
     const csvData = await getCSVData();
 
     // Search for identifier in CSV data based on type
-    const matchingRecords: Array<{ telegramAccount: string; newUsername: string }> = [];
+    const matchingRecords: Array<{ newUsername: string }> = [];
 
     for (const row of csvData.values()) {
       let isMatch = false;
@@ -53,7 +53,6 @@ export async function POST(request: NextRequest) {
 
       if (isMatch) {
         matchingRecords.push({
-          telegramAccount: row.telegramAccount,
           newUsername: row.newUsername || '',
         });
       }
@@ -72,12 +71,11 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // If identifier found, return success with associated telegram accounts
+    // If identifier found, return success
     return NextResponse.json({
       valid: true,
       message: `${validation.type === 'npubKey' ? 'nPUB key' : 'Username'} verified`,
       identifierType: validation.type,
-      telegramAccounts: matchingRecords.map(r => r.telegramAccount),
       matchCount: matchingRecords.length,
     }, {
       headers: createCacheHeaders(),
@@ -86,4 +84,3 @@ export async function POST(request: NextRequest) {
     return handleApiError(error, 500, 'Failed to verify identifier');
   }
 }
-

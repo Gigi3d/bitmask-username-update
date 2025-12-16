@@ -6,7 +6,6 @@ import Tooltip from './Tooltip';
 interface ReviewStepProps {
     formData: {
         oldUsername: string;
-        telegramAccount: string;
         newUsername: string;
         npubKey?: string;
     };
@@ -51,36 +50,17 @@ export default function ReviewStep({ formData, onConfirm, onEdit }: ReviewStepPr
                     </div>
                 </div>
 
-                {/* Step 2: Telegram */}
-                <div className="bg-gray-800 border border-gray-700 rounded-lg p-4">
-                    <div className="flex justify-between items-start mb-2">
-                        <div className="flex items-center gap-2">
-                            <span className="text-accent font-semibold">Step 2:</span>
-                            <span className="text-gray-300">Telegram Account</span>
-                        </div>
-                        <button
-                            onClick={() => onEdit(2)}
-                            className="text-accent hover:underline text-sm"
-                        >
-                            Edit
-                        </button>
-                    </div>
-                    <div className="mt-2">
-                        <p className="text-white font-mono text-sm">
-                            {formData.telegramAccount.startsWith('@') ? formData.telegramAccount : `@${formData.telegramAccount}`}
-                        </p>
-                    </div>
-                </div>
+
 
                 {/* Step 3: New Username */}
                 <div className="bg-gray-800 border border-gray-700 rounded-lg p-4">
                     <div className="flex justify-between items-start mb-2">
                         <div className="flex items-center gap-2">
-                            <span className="text-accent font-semibold">Step 3:</span>
+                            <span className="text-accent font-semibold">Step 2:</span>
                             <span className="text-gray-300">New Mainnet Username</span>
                         </div>
                         <button
-                            onClick={() => onEdit(3)}
+                            onClick={() => onEdit(2)}
                             className="text-accent hover:underline text-sm"
                         >
                             Edit

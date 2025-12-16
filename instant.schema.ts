@@ -21,7 +21,6 @@ const _schema = i.schema({
     }),
     csv_records: i.entity({
       oldUsername: i.string(),
-      telegramAccount: i.string(),
       newUsername: i.string(),
       npubKey: i.string().optional(), // nPUB key as alternative identifier
       createdAt: i.number(),
@@ -29,10 +28,16 @@ const _schema = i.schema({
     }),
     user_updates: i.entity({
       oldUsername: i.string(),
-      telegramAccount: i.string(),
-      newUsername: i.string(),
+      newUsername: i.string(), // Current/latest username
       npubKey: i.string().optional(), // nPUB key as alternative identifier
       submittedAt: i.number(),
+      // 3-Attempt tracking fields
+      updateAttemptCount: i.number(), // 1, 2, or 3
+      firstNewUsername: i.string().optional(), // First attempt
+      secondNewUsername: i.string().optional(), // Second attempt
+      thirdNewUsername: i.string().optional(), // Third attempt
+      lastUpdatedAt: i.number(), // Timestamp of last update
+      trackingId: i.string().optional(), // Tracking ID for submission tracking
     }),
   },
   links: {

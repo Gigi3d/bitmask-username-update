@@ -6,9 +6,13 @@ import { db } from '@/lib/instantdb';
 interface UserUpdate {
   id: string;
   oldUsername: string;
-  telegramAccount: string;
   newUsername: string;
   submittedAt: number;
+  updateAttemptCount?: number;
+  firstNewUsername?: string;
+  secondNewUsername?: string;
+  thirdNewUsername?: string;
+  lastUpdatedAt?: number;
 }
 
 export default function AllUpdatedRecords() {
@@ -28,7 +32,7 @@ export default function AllUpdatedRecords() {
 
     let processed = (updatesArray as UserUpdate[]).map(update => ({
       ...update,
-      normalizedSearch: `${update.oldUsername} ${update.newUsername} ${update.telegramAccount}`.toLowerCase(),
+      normalizedSearch: `${update.oldUsername} ${update.newUsername} ${update.firstNewUsername || ''} ${update.secondNewUsername || ''} ${update.thirdNewUsername || ''}`.toLowerCase(),
     }));
 
     // Filter by search term
@@ -43,9 +47,9 @@ export default function AllUpdatedRecords() {
     processed.sort((a, b) => {
       switch (sortBy) {
         case 'newest':
-          return b.submittedAt - a.submittedAt;
+          return (b.lastUpdatedAt || b.submittedAt) - (a.lastUpdatedAt || a.submittedAt);
         case 'oldest':
-          return a.submittedAt - b.submittedAt;
+          return (a.lastUpdatedAt || a.submittedAt) - (b.lastUpdatedAt || b.submittedAt);
         case 'username':
           return a.newUsername.localeCompare(b.newUsername);
         default:
@@ -76,17 +80,17 @@ export default function AllUpdatedRecords() {
             Complete list of all username updates ({updates.length} {updates.length === 1 ? 'record' : 'records'})
           </p>
         </div>
-        
+
         <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
           {/* Search */}
           <input
             type="text"
-            placeholder="Search by username or telegram..."
+            placeholder="Search by username..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-accent w-full sm:w-64"
           />
-          
+
           {/* Sort */}
           <select
             value={sortBy}
@@ -122,9 +126,10 @@ export default function AllUpdatedRecords() {
             <thead>
               <tr className="border-b border-gray-700">
                 <th className="text-left py-3 px-4 text-sm font-semibold text-gray-300">Old Username</th>
-                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-300">New Username</th>
-                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-300">Telegram Account</th>
-                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-300">Submitted At</th>
+                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-300">Current Username</th>
+                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-300">Attempts</th>
+                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-300">All Usernames</th>
+                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-300">Last Updated</th>
               </tr>
             </thead>
             <tbody>
@@ -137,8 +142,27 @@ export default function AllUpdatedRecords() {
                   <td className="py-3 px-4">
                     <span className="text-accent font-bold">{update.newUsername}</span>
                   </td>
-                  <td className="py-3 px-4 text-gray-400">{update.telegramAccount}</td>
-                  <td className="py-3 px-4 text-gray-400 text-sm">{formatDate(update.submittedAt)}</td>
+                  <td className="py-3 px-4">
+                    <span className="text-gray-400 text-sm">
+                      {update.updateAttemptCount || 1} of 3
+                    </span>
+                  </td>
+                  <td className="py-3 px-4">
+                    <div className="flex flex-col gap-1 text-sm">
+                      {update.firstNewUsername && (
+                        <span className="text-gray-400">1: {update.firstNewUsername}</span>
+                      )}
+                      {update.secondNewUsername && (
+                        <span className="text-gray-400">2: {update.secondNewUsername}</span>
+                      )}
+                      {update.thirdNewUsername && (
+                        <span className="text-gray-400">3: {update.thirdNewUsername}</span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="py-3 px-4 text-gray-400 text-sm">
+                    {formatDate(update.lastUpdatedAt || update.submittedAt)}
+                  </td>
                 </tr>
               ))}
             </tbody>

@@ -34,18 +34,6 @@ export function sanitizeUsername(username: string): string {
 }
 
 /**
- * Sanitize Telegram handle (alphanumeric, underscores, @)
- */
-export function sanitizeTelegramHandle(handle: string): string {
-    if (!handle || typeof handle !== 'string') return '';
-
-    // Allow alphanumeric, underscores, @
-    const sanitized = handle.replace(/[^a-zA-Z0-9_@]/g, '');
-
-    return sanitized.trim();
-}
-
-/**
  * Sanitize nPUB key (alphanumeric lowercase only)
  */
 export function sanitizeNpubKey(npubKey: string): string {

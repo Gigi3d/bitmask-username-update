@@ -11,8 +11,12 @@ export default function StatusChecker() {
         data?: {
             oldUsername: string;
             newUsername: string;
-            telegramAccount: string;
             submittedAt: number;
+            updateAttemptCount?: number;
+            firstNewUsername?: string;
+            secondNewUsername?: string;
+            thirdNewUsername?: string;
+            lastUpdatedAt?: number;
             status: 'pending' | 'processing' | 'completed' | 'error';
         };
         error?: string;
@@ -144,15 +148,31 @@ export default function StatusChecker() {
                                             </div>
                                             <div className="flex justify-between">
                                                 <span className="text-gray-400">New Username:</span>
-                                                <span className="text-white font-mono">{status.data.newUsername}</span>
+                                                <span className="text-accent font-mono font-bold">{status.data.newUsername}</span>
                                             </div>
                                             <div className="flex justify-between">
-                                                <span className="text-gray-400">Telegram:</span>
-                                                <span className="text-white font-mono">{status.data.telegramAccount}</span>
+                                                <span className="text-gray-400">Attempt:</span>
+                                                <span className="text-white">{status.data.updateAttemptCount || 1} of 3</span>
                                             </div>
+                                            {(status.data.firstNewUsername || status.data.secondNewUsername || status.data.thirdNewUsername) && (
+                                                <div className="mt-3 pt-3 border-t border-gray-700">
+                                                    <span className="text-gray-400 text-xs block mb-2">All Attempts:</span>
+                                                    <div className="space-y-1">
+                                                        {status.data.firstNewUsername && (
+                                                            <div className="text-xs text-gray-400">1. {status.data.firstNewUsername}</div>
+                                                        )}
+                                                        {status.data.secondNewUsername && (
+                                                            <div className="text-xs text-gray-400">2. {status.data.secondNewUsername}</div>
+                                                        )}
+                                                        {status.data.thirdNewUsername && (
+                                                            <div className="text-xs text-gray-400">3. {status.data.thirdNewUsername}</div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
                                             <div className="flex justify-between">
-                                                <span className="text-gray-400">Submitted:</span>
-                                                <span className="text-white">{formatDate(status.data.submittedAt)}</span>
+                                                <span className="text-gray-400">Last Updated:</span>
+                                                <span className="text-white">{formatDate(status.data.lastUpdatedAt || status.data.submittedAt)}</span>
                                             </div>
                                         </div>
                                     </div>

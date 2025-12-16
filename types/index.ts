@@ -1,17 +1,21 @@
 export interface CSVRow {
   oldUsername: string;
-  telegramAccount: string;
   newUsername: string;
   npubKey?: string; // Optional nPUB key as alternative identifier
 }
 
 export interface UserUpdateData {
   oldUsername: string;
-  telegramAccount: string;
-  newUsername: string;
+  newUsername: string; // Current/latest username
   npubKey?: string; // Optional nPUB key as alternative identifier
   trackingId?: string; // Optional tracking ID for submission tracking
   submittedAt: number; // Unix timestamp
+  // 3-Attempt tracking fields
+  updateAttemptCount: number; // 1, 2, or 3
+  firstNewUsername?: string;
+  secondNewUsername?: string;
+  thirdNewUsername?: string;
+  lastUpdatedAt: number;
 }
 
 export interface AnalyticsData {
@@ -31,7 +35,6 @@ export interface AdminUser {
 export interface CSVRecord {
   id: string;
   oldUsername: string;
-  telegramAccount: string;
   newUsername: string;
   npubKey?: string; // Optional nPUB key as alternative identifier
   createdAt: number;
@@ -41,10 +44,16 @@ export interface CSVRecord {
 export interface UserUpdate {
   id: string;
   oldUsername: string;
-  telegramAccount: string;
   newUsername: string;
   npubKey?: string; // Optional nPUB key as alternative identifier
   submittedAt: number;
+  // 3-Attempt tracking fields
+  updateAttemptCount: number;
+  firstNewUsername?: string;
+  secondNewUsername?: string;
+  thirdNewUsername?: string;
+  lastUpdatedAt: number;
+  trackingId?: string;
 }
 
 export interface AdminUserRecord {
@@ -54,12 +63,24 @@ export interface AdminUserRecord {
   createdAt: number;
 }
 
+// User update attempts tracking
+export interface UserUpdateAttempts {
+  oldUsername: string;
+  attemptCount: number; // 0, 1, 2, or 3
+  attempts: {
+    attemptNumber: number;
+    username: string;
+    timestamp: number;
+  }[];
+  canUpdate: boolean;
+  remainingAttempts: number;
+}
+
 // InstantDB Schema Definition
 export const instantSchema = {
   entities: {
     csv_records: {
       oldUsername: 'string',
-      telegramAccount: 'string',
       newUsername: 'string',
       npubKey: 'string',
       createdAt: 'number',
@@ -67,10 +88,15 @@ export const instantSchema = {
     },
     user_updates: {
       oldUsername: 'string',
-      telegramAccount: 'string',
       newUsername: 'string',
       npubKey: 'string',
       submittedAt: 'number',
+      updateAttemptCount: 'number',
+      firstNewUsername: 'string',
+      secondNewUsername: 'string',
+      thirdNewUsername: 'string',
+      lastUpdatedAt: 'number',
+      trackingId: 'string',
     },
     admin_users: {
       email: 'string',

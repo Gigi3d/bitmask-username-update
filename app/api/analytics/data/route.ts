@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { AnalyticsData } from '@/types';
 import { getUserUpdates, getCSVData, getAdminUsers } from '@/lib/storage';
-import { formatDate, getWeekStart, normalizeTelegramAccount } from '@/lib/utils';
+import { formatDate, getWeekStart } from '@/lib/utils';
 import { requireAdminAuth } from '@/lib/auth';
 import { handleApiError, createValidationError, createCacheHeaders } from '@/lib/apiHelpers';
 
@@ -34,12 +34,11 @@ export async function GET(request: NextRequest) {
     // If not superadmin, filter updates to only those matching their CSV records
     if (!isSuperAdmin) {
       const adminCSVData = await getCSVData(false, adminEmail);
-      const adminTelegramAccounts = new Set(adminCSVData.keys());
+      const adminOldUsernames = new Set(adminCSVData.keys());
 
-      // Filter updates to only include those matching admin's CSV records
+      // Filter updates to only include those matching admin's CSV records (by oldUsername)
       updates = updates.filter(update => {
-        const normalizedAccount = normalizeTelegramAccount(update.telegramAccount);
-        return adminTelegramAccounts.has(normalizedAccount);
+        return adminOldUsernames.has(update.oldUsername.toLowerCase());
       });
     }
 
@@ -49,7 +48,7 @@ export async function GET(request: NextRequest) {
     // Group by date
     const dailyMap = new Map<string, number>();
     updates.forEach(update => {
-      const date = formatDate(update.submittedAt);
+      const date = formatDate(update.lastUpdatedAt || update.submittedAt);
       dailyMap.set(date, (dailyMap.get(date) || 0) + 1);
     });
 
@@ -61,7 +60,7 @@ export async function GET(request: NextRequest) {
     // Group by week
     const weeklyMap = new Map<string, number>();
     updates.forEach(update => {
-      const week = getWeekStart(update.submittedAt);
+      const week = getWeekStart(update.lastUpdatedAt || update.submittedAt);
       weeklyMap.set(week, (weeklyMap.get(week) || 0) + 1);
     });
 
