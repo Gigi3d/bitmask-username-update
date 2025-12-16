@@ -48,7 +48,7 @@ export default function StatusChecker() {
             }
 
             setStatus({ found: true, data: data.submission });
-        } catch (error) {
+        } catch {
             setStatus({ found: false, error: 'Failed to check status. Please try again.' });
         } finally {
             setIsChecking(false);
@@ -198,7 +198,7 @@ export default function StatusChecker() {
                 {/* Help Section */}
                 <div className="mt-8 text-center">
                     <p className="text-gray-400 text-sm">
-                        Don't have a tracking ID?{' '}
+                        Don&apos;t have a tracking ID?{' '}
                         <a href="/update" className="text-accent hover:underline">
                             Submit a new update
                         </a>

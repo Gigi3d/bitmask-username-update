@@ -115,7 +115,7 @@ export default function ReviewStep({ formData, onConfirm, onEdit }: ReviewStepPr
             </button>
 
             <p className="text-gray-500 text-xs text-center mt-4">
-                Processing typically takes 24-48 hours. You'll receive a tracking ID after submission.
+                Processing typically takes 24-48 hours. You&apos;ll receive a tracking ID after submission.
             </p>
         </div>
     );

@@ -62,7 +62,7 @@ Bitcoin Native Finance is here @BitMask_App
     try {
       await navigator.clipboard.writeText(trackingId);
       showToast('Tracking ID copied!', 'success');
-    } catch (err) {
+    } catch {
       showToast('Failed to copy tracking ID', 'error');
     }
   };
@@ -152,7 +152,7 @@ Bitcoin Native Finance is here @BitMask_App
           <div className="flex items-start gap-3">
             <span className="text-accent text-xl">2.</span>
             <p className="text-gray-300 text-sm">
-              <strong>Email Confirmation:</strong> You'll receive an email when processing is complete.
+              <strong>Email Confirmation:</strong> You&apos;ll receive an email when processing is complete.
             </p>
           </div>
           <div className="flex items-start gap-3">

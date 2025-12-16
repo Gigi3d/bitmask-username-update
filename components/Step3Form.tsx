@@ -39,7 +39,7 @@ export default function Step3Form({ onSubmit, onBack, initialValue = '' }: Step3
       const text = await navigator.clipboard.readText();
       setNewUsername(text.trim());
       showToast('Pasted from clipboard', 'success');
-    } catch (err) {
+    } catch {
       showToast('Failed to paste from clipboard', 'error');
     }
   };

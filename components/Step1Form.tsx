@@ -39,7 +39,7 @@ export default function Step1Form({ onNext, initialValue = '' }: Step1FormProps)
       const text = await navigator.clipboard.readText();
       setIdentifier(text.trim());
       showToast('Pasted from clipboard', 'success');
-    } catch (err) {
+    } catch {
       showToast('Failed to paste from clipboard', 'error');
     }
   };
@@ -48,7 +48,7 @@ export default function Step1Form({ onNext, initialValue = '' }: Step1FormProps)
     try {
       await navigator.clipboard.writeText(identifier);
       showToast('Copied to clipboard', 'success');
-    } catch (err) {
+    } catch {
       showToast('Failed to copy to clipboard', 'error');
     }
   };
