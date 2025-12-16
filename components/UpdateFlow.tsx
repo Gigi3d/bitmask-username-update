@@ -19,6 +19,8 @@ export default function UpdateFlow() {
   const [currentStep, setCurrentStep] = useState(1);
   const [trackingId, setTrackingId] = useState<string>('');
   const [attemptInfo, setAttemptInfo] = useState<{ attemptNumber?: number; remainingAttempts?: number }>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     oldUsername: '',
     newUsername: '',
@@ -49,6 +51,10 @@ export default function UpdateFlow() {
   }, []);
 
   const handleReviewConfirm = async () => {
+    // Clear any previous errors
+    setError(null);
+    setIsSubmitting(true);
+
     try {
       // Generate tracking ID
       const newTrackingId = generateTrackingId();
@@ -101,7 +107,9 @@ export default function UpdateFlow() {
         console.error('❌ Error updating username:', error);
       }
       const message = error instanceof Error ? error.message : 'Failed to update username. Please try again.';
-      throw new Error(message);
+      setError(message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -138,6 +146,8 @@ export default function UpdateFlow() {
               formData={formData}
               onConfirm={handleReviewConfirm}
               onEdit={handleReviewEdit}
+              isSubmitting={isSubmitting}
+              error={error}
             />
           )}
 

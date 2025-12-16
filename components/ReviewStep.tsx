@@ -9,11 +9,13 @@ interface ReviewStepProps {
         newUsername: string;
         npubKey?: string;
     };
-    onConfirm: () => void;
+    onConfirm: () => Promise<void>;
     onEdit: (step: number) => void;
+    isSubmitting?: boolean;
+    error?: string | null;
 }
 
-export default function ReviewStep({ formData, onConfirm, onEdit }: ReviewStepProps) {
+export default function ReviewStep({ formData, onConfirm, onEdit, isSubmitting = false, error = null }: ReviewStepProps) {
     const [agreedToTerms, setAgreedToTerms] = useState(false);
 
     return (
@@ -105,13 +107,26 @@ export default function ReviewStep({ formData, onConfirm, onEdit }: ReviewStepPr
                 </div>
             </div>
 
+            {/* Error Message */}
+            {error && (
+                <div className="bg-red-900/20 border border-red-700/50 rounded-lg p-4 mb-6">
+                    <div className="flex items-start gap-3">
+                        <span className="text-red-500 text-xl">❌</span>
+                        <div>
+                            <h3 className="text-red-500 font-semibold mb-1">Error</h3>
+                            <p className="text-gray-300 text-sm">{error}</p>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Submit Button */}
             <button
                 onClick={onConfirm}
-                disabled={!agreedToTerms}
+                disabled={!agreedToTerms || isSubmitting}
                 className="w-full bg-accent text-black font-bold py-3 px-6 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
             >
-                Confirm & Submit
+                {isSubmitting ? 'Submitting...' : 'Confirm & Submit'}
             </button>
 
             <p className="text-gray-500 text-xs text-center mt-4">
