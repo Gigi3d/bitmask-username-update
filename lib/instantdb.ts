@@ -123,7 +123,8 @@ export const db = new Proxy({} as ReturnType<typeof initClient>, {
       return new Proxy(value, {
         get(_innerTarget, innerProp) {
           const innerValue = value[innerProp as keyof typeof value];
-          return typeof innerValue === 'function' ? innerValue.bind(value) : innerValue;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          return typeof innerValue === 'function' ? (innerValue as any).bind(value) : innerValue;
         }
       });
     }
