@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCSVData } from '@/lib/storage';
-import { validateIdentifier } from '@/lib/utils';
+import { validateIdentifier, normalizeBitmaskUsername } from '@/lib/utils';
 import { handleApiError, createValidationError, createCacheHeaders } from '@/lib/apiHelpers';
 
 /**
@@ -45,8 +45,10 @@ export async function POST(request: NextRequest) {
           isMatch = true;
         }
       } else {
-        // Match by old username
-        if (row.oldUsername.toLowerCase().trim() === identifier.toLowerCase().trim()) {
+        // Match by old username (flexible matching - supports both "username" and "username@bitmask.app")
+        const normalizedInput = normalizeBitmaskUsername(identifier);
+        const normalizedOld = normalizeBitmaskUsername(row.oldUsername);
+        if (normalizedOld === normalizedInput) {
           isMatch = true;
         }
       }

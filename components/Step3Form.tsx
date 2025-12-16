@@ -85,7 +85,7 @@ export default function Step3Form({ onSubmit, onBack, initialValue = '' }: Step3
           <label htmlFor="newUsername" className="block text-lg font-semibold">
             New Mainnet Bitmask Username <span className="text-red-500">*</span>
           </label>
-          <Tooltip content="Enter your new Bitmask mainnet wallet username (1-50 characters)">
+          <Tooltip content="Enter your new Bitmask username (e.g., gideon@bitmask.app). You can include or omit @bitmask.app">
             <span className="text-gray-400 cursor-help text-sm">ℹ️</span>
           </Tooltip>
         </div>
@@ -97,7 +97,7 @@ export default function Step3Form({ onSubmit, onBack, initialValue = '' }: Step3
             value={newUsername}
             onChange={(e) => setNewUsername(e.target.value)}
             className="w-full px-4 py-3 pr-16 bg-gray-900 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-accent"
-            placeholder="Enter your new username"
+            placeholder="e.g., gideon@bitmask.app or gideon"
             autoFocus
           />
 
@@ -125,7 +125,7 @@ export default function Step3Form({ onSubmit, onBack, initialValue = '' }: Step3
         )}
 
         <p className="mt-2 text-gray-400 text-sm">
-          Create a brand new Bitmask wallet and input the new Bitmask username
+          Enter your new username (with or without @bitmask.app)
         </p>
 
         {error && (

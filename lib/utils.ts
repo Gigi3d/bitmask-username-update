@@ -16,6 +16,30 @@ export function validateUsername(username: string): boolean {
 }
 
 /**
+ * Normalize Bitmask username for comparison
+ * Handles both formats: "username" and "username@bitmask.app"
+ * @param username - Username to normalize
+ * @returns Normalized username (without @bitmask.app suffix)
+ */
+export function normalizeBitmaskUsername(username: string): string {
+    if (!username) return '';
+    const trimmed = username.trim().toLowerCase();
+    // Remove @bitmask.app suffix if present
+    return trimmed.replace(/@bitmask\.app$/i, '');
+}
+
+/**
+ * Check if two usernames match (flexible matching)
+ * Supports both "username" and "username@bitmask.app" formats
+ * @param username1 - First username
+ * @param username2 - Second username
+ * @returns true if usernames match (ignoring @bitmask.app)
+ */
+export function usernamesMatch(username1: string, username2: string): boolean {
+    return normalizeBitmaskUsername(username1) === normalizeBitmaskUsername(username2);
+}
+
+/**
  * Validate nPUB key format
  * nPUB keys should start with "npub1" and be 63 characters long
  * Example: npub1jlyep8ew8l4gp9vl44dv422czapfeue9s3msxdj6uvnverl3yuyqjs8tqf

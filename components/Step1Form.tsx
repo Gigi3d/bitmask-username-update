@@ -110,7 +110,7 @@ export default function Step1Form({ onNext, initialValue = '' }: Step1FormProps)
   const inputType = identifier.trim().startsWith('npub1') ? 'npubKey' : 'username';
   const placeholderText = inputType === 'npubKey'
     ? 'npub1...'
-    : 'Enter your old username';
+    : 'e.g., gideon@bitmask.app or gideon';
 
   // Character count
   const charCount = identifier.length;
@@ -125,7 +125,7 @@ export default function Step1Form({ onNext, initialValue = '' }: Step1FormProps)
           <label htmlFor="identifier" className="block text-lg font-semibold">
             Old Bitmask Username or nPUB Key <span className="text-red-500">*</span>
           </label>
-          <Tooltip content="Enter either your old Bitmask username (e.g., alice@bitmask.app) or your nPUB key (63 characters starting with npub1)">
+          <Tooltip content="Enter your old Bitmask username (e.g., gideon@bitmask.app or just gideon) or your nPUB key (63 characters starting with npub1)">
             <span className="text-gray-400 cursor-help text-sm">ℹ️</span>
           </Tooltip>
         </div>
@@ -182,7 +182,9 @@ export default function Step1Form({ onNext, initialValue = '' }: Step1FormProps)
               <span className="text-accent">✓</span> Detected nPUB key format
             </>
           ) : (
-            <>You can enter either your old username or your nPUB key</>
+            <>
+              You can enter with or without @bitmask.app
+            </>
           )}
         </p>
 

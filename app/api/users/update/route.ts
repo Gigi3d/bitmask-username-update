@@ -4,6 +4,7 @@ import { addUserUpdate, canUserUpdate, getUserUpdateAttempts, getCSVData } from 
 import { checkRateLimit, getClientIp, RateLimitConfigs } from '@/lib/rateLimit';
 import { sanitizeUsername, sanitizeNpubKey, sanitizeTrackingId } from '@/lib/sanitize';
 import { handleApiError, createValidationError, createNotFoundError } from '@/lib/apiHelpers';
+import { normalizeBitmaskUsername } from '@/lib/utils';
 
 // Force dynamic rendering since this endpoint writes data
 export const dynamic = 'force-dynamic';
@@ -65,9 +66,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get CSV data to validate against
+    // Get CSV data to validate against (use flexible matching)
     const csvData = await getCSVData();
-    const csvRow = csvData.get(oldUsername.toLowerCase());
+    const normalizedOldUsername = normalizeBitmaskUsername(oldUsername);
+
+    // Find matching record using flexible username matching
+    let csvRow = null;
+    for (const row of csvData.values()) {
+      if (normalizeBitmaskUsername(row.oldUsername) === normalizedOldUsername) {
+        csvRow = row;
+        break;
+      }
+    }
 
     if (!csvRow) {
       return createNotFoundError('Old username not found in campaign records');

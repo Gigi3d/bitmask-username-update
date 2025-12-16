@@ -31,7 +31,7 @@ export default function InstructionsPage() {
               </div>
               <div className="flex-1">
                 <h2 className="text-xl font-bold mb-2 text-white">Input your old bitmask username or nPUB key</h2>
-                <p className="text-gray-300 text-base">Enter the username or nPUB key you used during the campaign</p>
+                <p className="text-gray-300 text-base">Enter the username (e.g., gideon@bitmask.app) or nPUB key you used during the campaign</p>
               </div>
             </div>
 
@@ -41,7 +41,7 @@ export default function InstructionsPage() {
               </div>
               <div className="flex-1">
                 <h2 className="text-xl font-bold mb-2 text-white">Update your newly created mainnet bitmask wallet username</h2>
-                <p className="text-gray-300 text-base">Set your new username for the mainnet wallet</p>
+                <p className="text-gray-300 text-base">Set your new username for the mainnet wallet (e.g., gideon@bitmask.app)</p>
               </div>
             </div>
           </div>

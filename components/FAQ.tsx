@@ -25,6 +25,10 @@ const faqData: FAQItem[] = [
         answer: 'Yes! You can provide either your old Bitmask username OR your nPUB key in Step 1. At least one of these identifiers is required to proceed.',
     },
     {
+        question: 'What format should my Bitmask username be in?',
+        answer: 'Bitmask usernames can be entered in two formats: the full format (e.g., gideon@bitmask.app) or just the username part (e.g., gideon). Both formats work - the system will match them automatically.',
+    },
+    {
         question: 'What happens after I submit?',
         answer: 'After submission, you\'ll receive a tracking ID. Your update will be processed within 24-48 hours, and you\'ll receive an email confirmation when complete. You can check your status anytime using the tracking ID.',
     },
