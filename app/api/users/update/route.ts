@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user can still update (3-attempt limit)
-    const { canUpdate, attemptCount, remainingAttempts } = await canUserUpdate(oldUsername);
+    const { canUpdate, attemptCount } = await canUserUpdate(oldUsername);
 
     if (!canUpdate) {
       return NextResponse.json(

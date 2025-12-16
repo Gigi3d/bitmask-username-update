@@ -151,13 +151,13 @@ export default function CSVUpload() {
           Upload a CSV file with the following columns:
         </p>
         <ul className="text-gray-400 text-sm space-y-1 list-disc list-inside">
-          <li><span className="font-semibold text-white">old username</span> - User's old Bitmask username</li>
-          <li><span className="font-semibold text-white">telegram account</span> - User's Telegram handle</li>
-          <li><span className="font-semibold text-white">new username</span> - User's new username</li>
-          <li><span className="font-semibold text-accent">npub key</span> <span className="text-gray-500">(optional)</span> - User's nPUB key as alternative identifier</li>
+          <li><span className="font-semibold text-white">old username</span> - User&apos;s old Bitmask username</li>
+          <li><span className="font-semibold text-white">telegram account</span> - User&apos;s Telegram handle</li>
+          <li><span className="font-semibold text-white">new username</span> - User&apos;s new username</li>
+          <li><span className="font-semibold text-accent">npub key</span> <span className="text-gray-500">(optional)</span> - User&apos;s nPUB key as alternative identifier</li>
         </ul>
         <p className="text-gray-500 text-xs mt-3">
-          Note: Either "old username" or "npub key" must be provided for each row.
+          Note: Either &quot;old username&quot; or &quot;npub key&quot; must be provided for each row.
         </p>
       </div>
 
