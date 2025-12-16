@@ -45,7 +45,10 @@ export default function SearchFilter<T extends Record<string, unknown>>({ data, 
                     break;
             }
 
-            filtered = filtered.filter(item => item.submittedAt >= cutoff);
+            filtered = filtered.filter(item => {
+                const submittedAt = item.submittedAt;
+                return typeof submittedAt === 'number' && submittedAt >= cutoff;
+            });
         }
 
         // Sort
