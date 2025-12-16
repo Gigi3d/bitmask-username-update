@@ -13,9 +13,6 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: true,
   },
 
-  // Prevent InstantDB from being bundled during build
-  serverExternalPackages: ['@instantdb/admin', '@instantdb/react'],
-
   // Optimize images
   images: {
     formats: ['image/avif', 'image/webp'],
