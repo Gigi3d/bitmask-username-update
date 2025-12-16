@@ -70,21 +70,17 @@ export async function POST(request: NextRequest) {
       await db.transact(deleteOps);
     }
 
-    // Create new records - one transaction at a time to avoid issues
+    // Create new records - match exact schema fields
     const now = Date.now();
     for (const row of parsedRows) {
       const recordId = id();
-      const newRecord: any = {
+      // Only use fields that exist in schema: telegramAccount, createdAt, oldUsername, newUsername
+      const newRecord = {
         oldUsername: row.oldUsername,
         newUsername: row.newUsername,
         createdAt: now,
         telegramAccount: '', // Required by schema
       };
-
-      // Add npubKey if it exists (requires npubKey to be added to InstantDB schema)
-      if (row.npubKey) {
-        newRecord.npubKey = row.npubKey;
-      }
 
       await db.transact([
         db.tx.csv_records[recordId].create(newRecord)
