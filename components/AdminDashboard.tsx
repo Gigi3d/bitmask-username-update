@@ -78,63 +78,24 @@ export default function AdminDashboard() {
 
   const isSuperAdmin = currentUserAdmin?.role === 'superadmin';
 
-  // Check and create admin user record if needed
+  // Check if current user is an admin
   useEffect(() => {
-    const checkAndCreateAdmin = async () => {
-      if (isLoading || !user?.email || adminCheckDone) return;
+    if (!isLoading && user?.email && adminData?.admin_users) {
+      const adminUsersArray = Array.isArray(adminData.admin_users)
+        ? adminData.admin_users
+        : Object.values(adminData.admin_users);
+      const currentUserAdmin = (adminUsersArray as Array<{ email?: string; role?: string }>)
+        .find((admin) => admin.email?.toLowerCase() === user.email?.toLowerCase());
 
-      try {
-        // Check if admin_users record exists for this user
-        const adminUsers = adminData?.admin_users || {};
-        const adminArray = Array.isArray(adminUsers) ? adminUsers : Object.values(adminUsers);
-        const userIsAdmin = adminArray.some((admin: { email?: string; role?: string }) =>
-          admin.email?.toLowerCase() === user.email?.toLowerCase()
-        );
-
-        if (!userIsAdmin) {
-          // Admin record doesn't exist, try to create it via API
-          if (process.env.NODE_ENV === 'development') {
-            console.log('Creating admin user record for:', user.email);
-          }
-
-          // Use API route instead of client-side transaction
-          // This works in production without requiring INSTANT_ADMIN_TOKEN
-          const response = await fetch('/api/admin/create', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'x-user-email': user.email,
-            },
-            body: JSON.stringify({
-              email: user.email,
-              role: 'superadmin',
-            }),
-          });
-
-          if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.error || 'Failed to create admin record');
-          }
-
-          if (process.env.NODE_ENV === 'development') {
-            console.log('Admin user record created successfully');
-          }
-        }
-      } catch (error) {
-        const errorObj = error instanceof Error ? error : new Error(String(error));
-        if (process.env.NODE_ENV === 'development') {
-          console.error('Error creating admin user record:', errorObj);
-        }
+      if (!currentUserAdmin) {
         setAdminCreationError(
-          errorObj.message || 'Could not create admin record. You may need to set INSTANT_ADMIN_TOKEN and use the script.'
+          `User ${user.email} is not authorized as an admin. Please contact support.`
         );
-      } finally {
-        setAdminCheckDone(true);
       }
-    };
 
-    checkAndCreateAdmin();
-  }, [user, isLoading, adminCheckDone, adminData]);
+      setAdminCheckDone(true);
+    }
+  }, [user, isLoading, adminData]);
 
   useEffect(() => {
     // Log auth state for debugging (development only)
@@ -204,12 +165,12 @@ export default function AdminDashboard() {
         <div className="w-full h-1 bg-accent mb-8"></div>
 
         {adminCreationError && (
-          <div className="bg-yellow-900/30 border border-yellow-700 rounded-lg p-4 mb-6">
-            <p className="text-yellow-400 text-sm">
-              <strong>Note:</strong> {adminCreationError}
+          <div className="bg-red-900/30 border border-red-700 rounded-lg p-4 mb-6">
+            <p className="text-red-400 text-sm">
+              <strong>Access Denied:</strong> {adminCreationError}
             </p>
-            <p className="text-yellow-300 text-xs mt-2">
-              To fix this, add INSTANT_ADMIN_TOKEN to your .env.local file and run: <code className="bg-gray-800 px-2 py-1 rounded">npm run add-root-admin</code>
+            <p className="text-red-300 text-xs mt-2">
+              Only authorized administrators can access this dashboard.
             </p>
           </div>
         )}
