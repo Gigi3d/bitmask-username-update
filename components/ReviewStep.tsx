@@ -100,7 +100,8 @@ export default function ReviewStep({ formData, onConfirm, onEdit, isSubmitting =
                     <div>
                         <h3 className="text-yellow-500 font-semibold mb-1">Important</h3>
                         <p className="text-gray-300 text-sm">
-                            Make sure your new username matches the one you created in your new Bitmask mainnet wallet.
+                            Make sure your new username matches the one you created in your new Bitmask mainnet wallet
+                            in the format <span className="text-accent font-mono">username@bitmask.app</span>.
                             Incorrect information may delay processing.
                         </p>
                     </div>

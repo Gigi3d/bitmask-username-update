@@ -26,7 +26,7 @@ const faqData: FAQItem[] = [
     },
     {
         question: 'What format should my Bitmask username be in?',
-        answer: 'Bitmask usernames can be entered in two formats: the full format (e.g., gideon@bitmask.app) or just the username part (e.g., gideon). Both formats work - the system will match them automatically.',
+        answer: 'Your new Bitmask username must be in the format username@bitmask.app (e.g., james@bitmask.app). For Step 1 (old username/nPUB key verification), you can enter either the full format or just the username part, and the system will match them automatically.',
     },
     {
         question: 'What happens after I submit?',
