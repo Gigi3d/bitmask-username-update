@@ -152,13 +152,7 @@ Bitcoin Season 3  @BitMask_App
           <div className="flex items-start gap-3">
             <span className="text-accent text-xl">2.</span>
             <p className="text-gray-300 text-sm">
-              <strong>Email Confirmation:</strong> You&apos;ll receive an email when processing is complete.
-            </p>
-          </div>
-          <div className="flex items-start gap-3">
-            <span className="text-accent text-xl">3.</span>
-            <p className="text-gray-300 text-sm">
-              <strong>Check Status:</strong> Use your tracking ID to check the status anytime.
+              <strong>Tracking ID:</strong> Store your tracking ID in a secure place or take a screenshot.
             </p>
           </div>
         </div>

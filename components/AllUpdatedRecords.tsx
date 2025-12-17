@@ -16,7 +16,11 @@ interface UserUpdate {
   trackingId?: string;
 }
 
-export default function AllUpdatedRecords() {
+interface AllUpdatedRecordsProps {
+  isSuperAdmin?: boolean;
+}
+
+export default function AllUpdatedRecords({ isSuperAdmin = false }: AllUpdatedRecordsProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'username'>('newest');
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -83,6 +87,65 @@ export default function AllUpdatedRecords() {
     }
   };
 
+  const downloadCSV = () => {
+    if (updates.length === 0) return;
+
+    // Define CSV headers
+    const headers = [
+      'Old Username',
+      'Current Username',
+      'Tracking ID',
+      'Attempt Count',
+      'First Username',
+      'Second Username',
+      'Third Username',
+      'Last Updated',
+      'Submitted At',
+      'Record ID'
+    ];
+
+    // Convert updates to CSV rows
+    const rows = updates.map(update => [
+      update.oldUsername || '',
+      update.newUsername || '',
+      update.trackingId || '',
+      update.updateAttemptCount || 1,
+      update.firstNewUsername || '',
+      update.secondNewUsername || '',
+      update.thirdNewUsername || '',
+      formatDate(update.lastUpdatedAt || update.submittedAt),
+      formatDate(update.submittedAt),
+      update.id
+    ]);
+
+    // Combine headers and rows
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => {
+        // Escape cells containing commas, quotes, or newlines
+        const cellStr = String(cell);
+        if (cellStr.includes(',') || cellStr.includes('"') || cellStr.includes('\n')) {
+          return `"${cellStr.replace(/"/g, '""')}"`;
+        }
+        return cellStr;
+      }).join(','))
+    ].join('\n');
+
+    // Create blob and download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+
+    link.setAttribute('href', url);
+    link.setAttribute('download', `bitmask-username-updates-${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+
   return (
     <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
@@ -113,6 +176,31 @@ export default function AllUpdatedRecords() {
             <option value="oldest">Oldest First</option>
             <option value="username">Sort by Username</option>
           </select>
+
+          {/* Download Button - Only for Superadmins */}
+          {isSuperAdmin && updates.length > 0 && (
+            <button
+              onClick={downloadCSV}
+              className="px-4 py-2 bg-accent text-black font-semibold rounded-lg hover:bg-accent/90 transition-colors flex items-center gap-2 whitespace-nowrap"
+              title="Download all records as CSV"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                />
+              </svg>
+              Download CSV
+            </button>
+          )}
         </div>
       </div>
 

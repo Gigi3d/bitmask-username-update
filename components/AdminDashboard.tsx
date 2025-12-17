@@ -204,7 +204,7 @@ export default function AdminDashboard() {
           </ErrorBoundary>
 
           <ErrorBoundary componentName="updated records list">
-            <AllUpdatedRecords />
+            <AllUpdatedRecords isSuperAdmin={isSuperAdmin} />
           </ErrorBoundary>
         </div>
       </div>
