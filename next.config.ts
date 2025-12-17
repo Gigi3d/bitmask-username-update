@@ -79,13 +79,29 @@ const nextConfig: NextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://vercel.live",
+              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://vercel.live https://va.vercel-scripts.com",
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: https:",
               "font-src 'self' data:",
-              "connect-src 'self' https://*.instantdb.com wss://*.instantdb.com https://api.instantdb.com wss://api.instantdb.com https://vercel.live",
+              "connect-src 'self' https://*.instantdb.com wss://*.instantdb.com https://api.instantdb.com wss://api.instantdb.com https://vercel.live https://vitals.vercel-insights.com",
               "frame-ancestors 'self'",
             ].join('; ')
+          },
+          {
+            key: 'Cross-Origin-Embedder-Policy',
+            value: 'credentialless'
+          },
+          {
+            key: 'Cross-Origin-Opener-Policy',
+            value: 'same-origin-allow-popups'
+          },
+          {
+            key: 'Cross-Origin-Resource-Policy',
+            value: 'cross-origin'
+          },
+          {
+            key: 'X-Permitted-Cross-Domain-Policies',
+            value: 'none'
           },
         ],
       },
