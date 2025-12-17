@@ -125,7 +125,7 @@ export default function UpdateFlow() {
           </>
         )}
 
-        <div className="bg-gray-900 border border-gray-800 rounded-lg p-8">
+        <div className="bg-gray-900 border border-gray-800 rounded-lg p-8 animate-slide-up">
           {currentStep === 1 && (
             <Step1Form
               onNext={handleStep1Next}

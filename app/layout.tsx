@@ -18,8 +18,8 @@ export const metadata: Metadata = {
     default: "Bitmask Username Update",
     template: "%s | Bitmask Username Update",
   },
-  description: "Update your Bitmask username for mainnet",
-  keywords: ["Bitmask", "username", "update", "mainnet"],
+  description: "Update your Bitmask wallet username from campaign/testnet to mainnet. Simple 2-step process with real-time validation and tracking.",
+  keywords: ["Bitmask", "username", "update", "mainnet", "Bitcoin", "RGB protocol", "wallet"],
   authors: [{ name: "Bitmask" }],
   creator: "Bitmask",
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://bitmask.app'),
@@ -27,13 +27,13 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_US",
     siteName: "Bitmask Username Update",
-    title: "Bitmask Username Update",
-    description: "Update your Bitmask username for mainnet",
+    title: "Bitmask Username Update - Mainnet Migration",
+    description: "Update your Bitmask wallet username from campaign/testnet to mainnet. Simple 2-step process with real-time validation and tracking.",
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: "Bitmask Username Update",
-    description: "Update your Bitmask username for mainnet",
+    description: "Update your Bitmask wallet username from campaign/testnet to mainnet",
   },
   robots: {
     index: true,
@@ -45,6 +45,12 @@ export const metadata: Metadata = {
       'max-image-preview': 'large',
       'max-snippet': -1,
     },
+  },
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 5,
+    userScalable: true,
   },
 };
 

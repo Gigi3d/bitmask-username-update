@@ -139,6 +139,10 @@ export default function Step1Form({ onNext, initialValue = '' }: Step1FormProps)
             className="w-full px-4 py-3 pr-24 bg-gray-900 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-accent"
             placeholder={placeholderText}
             autoFocus
+            aria-label="Old Bitmask username or nPUB key"
+            aria-describedby="identifier-hint"
+            aria-invalid={!!error}
+            aria-required="true"
           />
 
           {/* Copy/Paste buttons */}
@@ -148,6 +152,7 @@ export default function Step1Form({ onNext, initialValue = '' }: Step1FormProps)
                 type="button"
                 onClick={handlePaste}
                 className="px-2 py-1 text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 rounded border border-gray-600"
+                aria-label="Paste from clipboard"
               >
                 📋
               </button>
@@ -158,6 +163,7 @@ export default function Step1Form({ onNext, initialValue = '' }: Step1FormProps)
                   type="button"
                   onClick={handleCopy}
                   className="px-2 py-1 text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 rounded border border-gray-600"
+                  aria-label="Copy to clipboard"
                 >
                   📄
                 </button>
