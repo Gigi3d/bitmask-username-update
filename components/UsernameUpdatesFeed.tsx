@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { db } from '@/lib/instantdb';
 
 interface UserUpdate {
@@ -10,9 +10,12 @@ interface UserUpdate {
   submittedAt: number;
   updateAttemptCount?: number;
   lastUpdatedAt?: number;
+  trackingId?: string;
 }
 
 export default function UsernameUpdatesFeed() {
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
   // Use reactive query to get real-time updates
   const { data: updatesData } = db.useQuery({ user_updates: {} });
 
@@ -43,6 +46,16 @@ export default function UsernameUpdatesFeed() {
     if (diffDays < 7) return `${diffDays}d ago`;
 
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined });
+  };
+
+  const handleCopyTrackingId = async (trackingId: string) => {
+    try {
+      await navigator.clipboard.writeText(trackingId);
+      setCopiedId(trackingId);
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch (error) {
+      console.error('Failed to copy tracking ID:', error);
+    }
   };
 
   return (
@@ -82,6 +95,21 @@ export default function UsernameUpdatesFeed() {
                       {update.updateAttemptCount || 1} of 3 attempts
                     </span>
                   </div>
+                  {update.trackingId && (
+                    <div className="mt-2 flex items-center gap-2">
+                      <span className="text-xs text-gray-500">Tracking ID:</span>
+                      <code className="text-xs font-mono text-accent bg-gray-900 px-2 py-1 rounded">
+                        {update.trackingId}
+                      </code>
+                      <button
+                        onClick={() => handleCopyTrackingId(update.trackingId!)}
+                        className="text-xs text-gray-400 hover:text-accent transition-colors"
+                        title="Copy tracking ID"
+                      >
+                        {copiedId === update.trackingId ? '✓ Copied' : '📋 Copy'}
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

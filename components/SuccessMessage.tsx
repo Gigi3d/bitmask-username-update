@@ -39,11 +39,11 @@ export default function SuccessMessage({ oldUsername, newUsername, trackingId, a
     }
   }, [oldUsername, attemptNumber]);
 
-  const twitterMessage = `Just updated my BitMask wallet username to ${newUsername} for RGB protocol on Bitcoin mainnet! 🚀
+  const twitterMessage = `Just updated my BitMask wallet username to ${newUsername} 
 
-Bitcoin Native Finance is here @BitMask_App 
+Bitcoin Season 3  @BitMask_App 
 
-#Bitmask #Mainnet #RGB`;
+#Bitmask #GOAT #RGB`;
 
   const handleCopy = async () => {
     try {

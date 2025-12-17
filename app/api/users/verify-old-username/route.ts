@@ -33,40 +33,45 @@ export async function POST(request: NextRequest) {
     // Get CSV data
     const csvData = await getCSVData();
 
-    // Search for identifier in CSV data based on type
-    const matchingRecords: Array<{ newUsername: string }> = [];
+    // Search for identifier in CSV data - check BOTH oldUsername AND npubKey fields
+    const matchingRecords: Array<{ newUsername: string; matchedField: 'username' | 'npubKey' }> = [];
 
     for (const row of csvData.values()) {
       let isMatch = false;
+      let matchedField: 'username' | 'npubKey' | null = null;
 
-      if (validation.type === 'npubKey') {
-        // Match by nPUB key
-        if (row.npubKey && row.npubKey.toLowerCase().trim() === identifier.toLowerCase().trim()) {
-          isMatch = true;
-        }
-      } else {
-        // Match by old username (flexible matching - supports both "username" and "username@bitmask.app")
+      // Always check BOTH fields regardless of detected type
+
+      // Check if it matches the npubKey field
+      if (row.npubKey && row.npubKey.toLowerCase().trim() === identifier.toLowerCase().trim()) {
+        isMatch = true;
+        matchedField = 'npubKey';
+      }
+
+      // Check if it matches the oldUsername field (if not already matched)
+      if (!isMatch && row.oldUsername) {
         const normalizedInput = normalizeBitmaskUsername(identifier);
         const normalizedOld = normalizeBitmaskUsername(row.oldUsername);
         if (normalizedOld === normalizedInput) {
           isMatch = true;
+          matchedField = 'username';
         }
       }
 
-      if (isMatch) {
+      if (isMatch && matchedField) {
         matchingRecords.push({
           newUsername: row.newUsername || '',
+          matchedField,
         });
       }
     }
 
     if (matchingRecords.length === 0) {
-      const identifierLabel = validation.type === 'npubKey' ? 'nPUB key' : 'username';
       return NextResponse.json({
         valid: false,
-        message: `${identifierLabel.charAt(0).toUpperCase() + identifierLabel.slice(1)} "${identifier}" not found in campaign records. Please verify you entered the correct ${identifierLabel} from the campaign.`,
+        message: `Identifier "${identifier}" not found in campaign records. Please verify you entered the correct username or nPUB key from the campaign.`,
         details: process.env.NODE_ENV === 'development'
-          ? `Searched ${csvData.size} records in the database.`
+          ? `Searched ${csvData.size} records in the database (checked both username and npubKey fields).`
           : undefined
       }, {
         headers: createCacheHeaders(),
@@ -74,11 +79,15 @@ export async function POST(request: NextRequest) {
     }
 
     // If identifier found, return success
+    const firstMatch = matchingRecords[0];
+    const matchedFieldLabel = firstMatch.matchedField === 'npubKey' ? 'nPUB key' : 'Username';
+
     return NextResponse.json({
       valid: true,
-      message: `${validation.type === 'npubKey' ? 'nPUB key' : 'Username'} verified`,
-      identifierType: validation.type,
+      message: `${matchedFieldLabel} verified successfully`,
+      identifierType: firstMatch.matchedField === 'npubKey' ? 'npubKey' : 'username',
       matchCount: matchingRecords.length,
+      matchedField: firstMatch.matchedField,
     }, {
       headers: createCacheHeaders(),
     });

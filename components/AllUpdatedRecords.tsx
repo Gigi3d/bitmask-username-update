@@ -13,11 +13,13 @@ interface UserUpdate {
   secondNewUsername?: string;
   thirdNewUsername?: string;
   lastUpdatedAt?: number;
+  trackingId?: string;
 }
 
 export default function AllUpdatedRecords() {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'username'>('newest');
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   // Use reactive query to get all updates
   const { data: updatesData } = db.useQuery({ user_updates: {} });
@@ -32,7 +34,7 @@ export default function AllUpdatedRecords() {
 
     let processed = (updatesArray as UserUpdate[]).map(update => ({
       ...update,
-      normalizedSearch: `${update.oldUsername} ${update.newUsername} ${update.firstNewUsername || ''} ${update.secondNewUsername || ''} ${update.thirdNewUsername || ''}`.toLowerCase(),
+      normalizedSearch: `${update.oldUsername} ${update.newUsername} ${update.firstNewUsername || ''} ${update.secondNewUsername || ''} ${update.thirdNewUsername || ''} ${update.trackingId || ''}`.toLowerCase(),
     }));
 
     // Filter by search term
@@ -71,6 +73,16 @@ export default function AllUpdatedRecords() {
     });
   };
 
+  const handleCopyTrackingId = async (trackingId: string) => {
+    try {
+      await navigator.clipboard.writeText(trackingId);
+      setCopiedId(trackingId);
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch (error) {
+      console.error('Failed to copy tracking ID:', error);
+    }
+  };
+
   return (
     <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
@@ -85,7 +97,7 @@ export default function AllUpdatedRecords() {
           {/* Search */}
           <input
             type="text"
-            placeholder="Search by username..."
+            placeholder="Search by username or tracking ID..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-accent w-full sm:w-64"
@@ -127,6 +139,7 @@ export default function AllUpdatedRecords() {
               <tr className="border-b border-gray-700">
                 <th className="text-left py-3 px-4 text-sm font-semibold text-gray-300">Old Username</th>
                 <th className="text-left py-3 px-4 text-sm font-semibold text-gray-300">Current Username</th>
+                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-300">Tracking ID</th>
                 <th className="text-left py-3 px-4 text-sm font-semibold text-gray-300">Attempts</th>
                 <th className="text-left py-3 px-4 text-sm font-semibold text-gray-300">All Usernames</th>
                 <th className="text-left py-3 px-4 text-sm font-semibold text-gray-300">Last Updated</th>
@@ -141,6 +154,24 @@ export default function AllUpdatedRecords() {
                   <td className="py-3 px-4 text-white font-medium">{update.oldUsername}</td>
                   <td className="py-3 px-4">
                     <span className="text-accent font-bold">{update.newUsername}</span>
+                  </td>
+                  <td className="py-3 px-4">
+                    {update.trackingId ? (
+                      <div className="flex items-center gap-2">
+                        <code className="text-xs font-mono text-accent bg-gray-900 px-2 py-1 rounded">
+                          {update.trackingId}
+                        </code>
+                        <button
+                          onClick={() => handleCopyTrackingId(update.trackingId!)}
+                          className="text-xs text-gray-400 hover:text-accent transition-colors"
+                          title="Copy tracking ID"
+                        >
+                          {copiedId === update.trackingId ? '✓' : '📋'}
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="text-gray-500 text-xs">N/A</span>
+                    )}
                   </td>
                   <td className="py-3 px-4">
                     <span className="text-gray-400 text-sm">
