@@ -153,18 +153,51 @@ export function parseCSV(csvContent: string): Array<{
         );
     }
 
-    // Parse data rows
+    // Parse data rows with proper CSV handling (RFC 4180)
     const rows: Array<{
         oldUsername: string;
         newUsername: string;
         npubKey?: string;
     }> = [];
 
+    // Helper function to parse a CSV line properly (handles quotes and commas)
+    function parseCSVLine(line: string): string[] {
+        const result: string[] = [];
+        let current = '';
+        let inQuotes = false;
+
+        for (let i = 0; i < line.length; i++) {
+            const char = line[i];
+            const nextChar = line[i + 1];
+
+            if (char === '"') {
+                if (inQuotes && nextChar === '"') {
+                    // Escaped quote
+                    current += '"';
+                    i++; // Skip next quote
+                } else {
+                    // Toggle quote mode
+                    inQuotes = !inQuotes;
+                }
+            } else if (char === ',' && !inQuotes) {
+                // End of field
+                result.push(current.trim());
+                current = '';
+            } else {
+                current += char;
+            }
+        }
+
+        // Add last field
+        result.push(current.trim());
+        return result;
+    }
+
     for (let i = 1; i < lines.length; i++) {
         const line = lines[i].trim();
         if (!line) continue; // Skip empty lines
 
-        const values = line.split(',').map(v => v.trim());
+        const values = parseCSVLine(line);
 
         // Get values from columns
         const oldUsername = values[oldUsernameIndex] || '';
@@ -184,6 +217,7 @@ export function parseCSV(csvContent: string): Array<{
         });
     }
 
+    console.log(`Parsed ${rows.length} valid rows from ${lines.length - 1} total lines`);
     return rows;
 }
 
