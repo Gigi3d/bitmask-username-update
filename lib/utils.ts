@@ -210,19 +210,12 @@ export function parseCSV(csvContent: string): Array<{
         let newUsername = values[newUsernameIndex] || '';
         const npubKey = npubKeyIndex !== -1 ? values[npubKeyIndex] : undefined;
 
-        // Skip rows where BOTH oldUsername AND npubKey are empty
-        // At least one identifier is required
-        if (!oldUsername && !npubKey) {
-            skippedMissingOldUsername++;
-            continue;
-        }
-
         // If newUsername is empty, use oldUsername as newUsername (or empty if no oldUsername)
         if (!newUsername) {
             newUsername = oldUsername || '';
         }
 
-        // Add row
+        // Add row - accept all records regardless of content
         rows.push({
             oldUsername,
             newUsername,
