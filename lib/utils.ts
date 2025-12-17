@@ -160,6 +160,9 @@ export function parseCSV(csvContent: string): Array<{
         npubKey?: string;
     }> = [];
 
+    let skippedEmptyLines = 0;
+    let skippedMissingOldUsername = 0;
+
     // Helper function to parse a CSV line properly (handles quotes and commas)
     function parseCSVLine(line: string): string[] {
         const result: string[] = [];
@@ -195,7 +198,10 @@ export function parseCSV(csvContent: string): Array<{
 
     for (let i = 1; i < lines.length; i++) {
         const line = lines[i].trim();
-        if (!line) continue; // Skip empty lines
+        if (!line) {
+            skippedEmptyLines++;
+            continue; // Skip empty lines
+        }
 
         const values = parseCSVLine(line);
 
@@ -206,6 +212,7 @@ export function parseCSV(csvContent: string): Array<{
 
         // Skip rows where oldUsername is empty (required field)
         if (!oldUsername) {
+            skippedMissingOldUsername++;
             continue;
         }
 
@@ -217,7 +224,14 @@ export function parseCSV(csvContent: string): Array<{
         });
     }
 
-    console.log(`Parsed ${rows.length} valid rows from ${lines.length - 1} total lines`);
+    console.log(`CSV Parsing Summary:`);
+    console.log(`  Total lines in file: ${lines.length}`);
+    console.log(`  Header lines: 1`);
+    console.log(`  Data lines: ${lines.length - 1}`);
+    console.log(`  Empty lines skipped: ${skippedEmptyLines}`);
+    console.log(`  Missing oldUsername skipped: ${skippedMissingOldUsername}`);
+    console.log(`  Valid rows parsed: ${rows.length}`);
+
     return rows;
 }
 
