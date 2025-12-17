@@ -163,7 +163,6 @@ export async function addUserUpdate(updateData: UserUpdateData): Promise<{ succe
 
     // Build record with required fields
     const record: Record<string, string | number> = {
-      oldUsername: updateData.oldUsername,
       newUsername: updateData.newUsername,
       submittedAt: updateData.submittedAt || now,
       updateAttemptCount: updateData.updateAttemptCount,
@@ -171,6 +170,7 @@ export async function addUserUpdate(updateData: UserUpdateData): Promise<{ succe
     };
 
     // Only add optional fields if they exist (avoid null, use undefined)
+    if (updateData.oldUsername) record.oldUsername = updateData.oldUsername;
     if (updateData.npubKey) record.npubKey = updateData.npubKey;
     if (updateData.trackingId) record.trackingId = updateData.trackingId;
     if (updateData.firstNewUsername) record.firstNewUsername = updateData.firstNewUsername;
