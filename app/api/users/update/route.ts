@@ -102,8 +102,9 @@ export async function POST(request: NextRequest) {
     // Record found - no additional validation needed
     // User can update to any new username
 
-    // Get existing attempts to populate the correct field
-    const attempts = await getUserUpdateAttempts(oldUsername);
+    // Get existing attempts using either oldUsername or npubKey as identifier
+    const identifier = oldUsername || npubKey || '';
+    const attempts = await getUserUpdateAttempts(identifier);
     const nextAttemptNumber = attemptCount + 1;
 
     // Generate tracking ID if not provided
