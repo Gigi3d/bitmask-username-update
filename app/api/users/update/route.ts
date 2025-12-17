@@ -47,9 +47,9 @@ export async function POST(request: NextRequest) {
       return createValidationError('Old username and new username are required');
     }
 
-    // Validate lengths
-    if (oldUsername.length > 50 || newUsername.length > 50) {
-      return createValidationError('Username must be 50 characters or less');
+    // Validate lengths (allow up to 100 characters to accommodate @bitmask.app suffix)
+    if (oldUsername.length > 100 || newUsername.length > 100) {
+      return createValidationError('Username is too long (maximum 100 characters)');
     }
 
     // Check if user can still update (3-attempt limit)

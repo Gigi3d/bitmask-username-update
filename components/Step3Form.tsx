@@ -56,7 +56,7 @@ export default function Step3Form({ onSubmit, onBack, initialValue = '' }: Step3
     }
 
     if (!validateUsername(newUsername.trim())) {
-      setError('Username must be between 1 and 50 characters');
+      setError('Username must be between 1 and 100 characters');
       setIsSubmitting(false);
       return;
     }
@@ -74,7 +74,7 @@ export default function Step3Form({ onSubmit, onBack, initialValue = '' }: Step3
 
   // Character count
   const charCount = newUsername.length;
-  const maxChars = 50;
+  const maxChars = 100;
   const isNearLimit = charCount > maxChars * 0.8;
   const isOverLimit = charCount > maxChars;
 

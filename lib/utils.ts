@@ -12,7 +12,7 @@ export function validateUsername(username: string): boolean {
         return false;
     }
     const trimmed = username.trim();
-    return trimmed.length >= 1 && trimmed.length <= 50;
+    return trimmed.length >= 1 && trimmed.length <= 100;
 }
 
 /**
