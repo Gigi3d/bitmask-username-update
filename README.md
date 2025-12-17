@@ -55,9 +55,19 @@ Users update their Bitmask username in 2 steps. Admins manage campaign data via 
 #### **CSV Upload & Management** (`/admin/dashboard`)
 
 - Drag-and-drop CSV upload
+- Custom upload names/labels (editable)
 - Format validation (required: oldUsername, newUsername)
 - Duplicate handling
 - Upload history tracking
+
+#### **CSV Viewer** (`/admin/dashboard`)
+
+- View all uploaded CSV files with metadata
+- **Pagination**: 1000 records per page with Next/Previous navigation
+- **Editable Upload Names**: Click to rename any upload
+- **Expandable Sections**: Click to view records for each upload
+- **Upload Metadata**: See uploader, timestamp, and record count
+- **Search & Filter**: Find specific records within uploads
 
 #### **Analytics Dashboard**
 
@@ -176,11 +186,13 @@ npm start
 │   ├── AdminLogin.tsx            # Admin login component
 │   ├── Analytics.tsx             # Analytics charts component
 │   ├── CSVUpload.tsx             # CSV upload component
+│   ├── CSVViewer.tsx             # CSV viewer with pagination (NEW)
 │   └── ...                       # Other components
 ├── lib/                          # Utility libraries
-│   ├── apiHelpers.ts             # Shared API utilities (NEW)
+│   ├── apiHelpers.ts             # Shared API utilities
 │   ├── auth.ts                   # Authentication helpers
 │   ├── instantdb.ts              # InstantDB configuration
+│   ├── pagination.ts             # Pagination utilities (NEW)
 │   ├── storage.ts                # Database operations
 │   ├── utils.ts                  # Utility functions
 │   └── validationHelpers.ts     # Enhanced validation
@@ -216,7 +228,43 @@ Verify old username or nPUB exists in campaign data.
 
 #### `POST /api/csv/upload`
 
-Upload campaign CSV (requires auth).
+Upload campaign CSV with optional custom name (requires auth).
+
+**Request (FormData):**
+
+- `file`: CSV file
+- `uploadName` (optional): Custom name for the upload
+
+**Response:** Upload ID, name, and record count
+
+#### `GET /api/csv/uploads`
+
+Get list of all CSV uploads with metadata (requires auth).
+
+**Response:** Array of uploads with names, dates, record counts
+
+#### `GET /api/csv/uploads/[id]?page=1&limit=1000`
+
+Get paginated records for a specific upload (requires auth).
+
+**Query Parameters:**
+
+- `page`: Page number (default: 1)
+- `limit`: Records per page (default: 1000, max: 10000)
+
+**Response:** Paginated records with pagination metadata
+
+#### `PATCH /api/csv/uploads/[id]/rename`
+
+Rename a CSV upload (requires auth).
+
+**Request:**
+
+```json
+{
+  "uploadName": "New Upload Name"
+}
+```
 
 #### `GET /api/analytics/data`
 
@@ -226,9 +274,14 @@ Get dashboard analytics.
 
 InstantDB schema:
 
-**csv_records**: Campaign data
+**csv_uploads**: CSV upload metadata
 
-- `oldUsername`, `newUsername`, `createdAt`, `uploadedBy`
+- `uploadName`, `fileName`, `uploadedBy`, `uploadedAt`, `recordCount`
+
+**csv_records**: Campaign data (linked to uploads)
+
+- `oldUsername`, `newUsername`, `npubKey` (optional)
+- `uploadId`, `createdAt`, `uploadedBy`
 
 **user_updates**: Username updates (3-attempt tracking)
 
@@ -279,6 +332,7 @@ user456,newuser456
 ## 📚 Additional Documentation
 
 - [INSTANTDB_SETUP.md](./INSTANTDB_SETUP.md) - Detailed InstantDB configuration guide
+- [CSV_VIEWER_SCHEMA_UPDATE.md](./CSV_VIEWER_SCHEMA_UPDATE.md) - CSV Viewer schema update guide
 - [LOCAL_SETUP_GUIDE.md](./LOCAL_SETUP_GUIDE.md) - Local development setup guide
 - [DEPLOYMENT.md](./DEPLOYMENT.md) - Deployment instructions
 

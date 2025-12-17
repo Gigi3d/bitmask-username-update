@@ -19,11 +19,19 @@ const _schema = i.schema({
       role: i.string(),
       createdAt: i.number(),
     }),
+    csv_uploads: i.entity({
+      uploadName: i.string(), // Editable name/label for the upload
+      fileName: i.string(), // Original filename
+      uploadedBy: i.string(), // Admin email who uploaded
+      uploadedAt: i.number(), // Timestamp
+      recordCount: i.number(), // Number of records in this upload
+    }),
     csv_records: i.entity({
       oldUsername: i.string(),
       newUsername: i.string(),
       npubKey: i.string().optional(), // nPUB key as alternative identifier
       createdAt: i.number(),
+      uploadId: i.string(), // Links to csv_uploads
       uploadedBy: i.string().optional(), // Email of the admin who uploaded the CSV (optional for backward compatibility)
     }),
     user_updates: i.entity({
@@ -52,6 +60,18 @@ const _schema = i.schema({
         on: "$users",
         has: "many",
         label: "linkedGuestUsers",
+      },
+    },
+    csvUploadRecords: {
+      forward: {
+        on: "csv_records",
+        has: "one",
+        label: "upload",
+      },
+      reverse: {
+        on: "csv_uploads",
+        has: "many",
+        label: "records",
       },
     },
   },

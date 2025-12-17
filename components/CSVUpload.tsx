@@ -6,6 +6,7 @@ import { db } from '@/lib/instantdb';
 export default function CSVUpload() {
   const { user } = db.useAuth();
   const [file, setFile] = useState<File | null>(null);
+  const [uploadName, setUploadName] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -47,6 +48,9 @@ export default function CSVUpload() {
 
       const formData = new FormData();
       formData.append('file', file);
+      if (uploadName.trim()) {
+        formData.append('uploadName', uploadName.trim());
+      }
 
       // Create XMLHttpRequest for progress tracking
       const xhr = new XMLHttpRequest();
@@ -126,6 +130,7 @@ export default function CSVUpload() {
       }
 
       setFile(null);
+      setUploadName('');
 
       // Reset file input
       const fileInput = document.getElementById('csv-file') as HTMLInputElement;
@@ -161,6 +166,26 @@ export default function CSVUpload() {
       </div>
 
       <div className="space-y-4">
+        <div>
+          <label
+            htmlFor="upload-name"
+            className="block text-sm font-semibold mb-2"
+          >
+            Upload Name (Optional)
+          </label>
+          <input
+            type="text"
+            id="upload-name"
+            value={uploadName}
+            onChange={(e) => setUploadName(e.target.value)}
+            placeholder="e.g., December 2025 Batch"
+            className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:border-accent"
+          />
+          <p className="text-gray-500 text-xs mt-1">
+            If not provided, the filename will be used
+          </p>
+        </div>
+
         <div>
           <label
             htmlFor="csv-file"

@@ -25,6 +25,7 @@ export async function POST(request: NextRequest) {
     // Parse form data
     const formData = await request.formData();
     const file = formData.get('file') as File;
+    const uploadName = formData.get('uploadName') as string | null;
 
     if (!file) {
       return NextResponse.json(
@@ -54,42 +55,42 @@ export async function POST(request: NextRequest) {
 
     // Get database instance
     const db = getAdminDb();
-
-    // Delete ALL existing CSV records (since we're not tracking uploadedBy anymore)
-    const existingQuery = await db.query({ csv_records: {} });
-    const existingRecords = existingQuery?.csv_records
-      ? (Array.isArray(existingQuery.csv_records)
-        ? existingQuery.csv_records
-        : Object.values(existingQuery.csv_records))
-      : [];
-
-    if (existingRecords.length > 0) {
-      const deleteOps = existingRecords.map((record: any) =>
-        db.tx.csv_records[record.id].delete()
-      );
-      await db.transact(deleteOps);
-    }
-
-    // Create new records - match exact schema fields
     const now = Date.now();
-    for (const row of parsedRows) {
+
+    // Create csv_uploads record first
+    const uploadId = id();
+    const uploadRecord = {
+      uploadName: uploadName || file.name.replace('.csv', ''),
+      fileName: file.name,
+      uploadedBy: adminEmail,
+      uploadedAt: now,
+      recordCount: parsedRows.length,
+    };
+
+    await db.transact([
+      db.tx.csv_uploads[uploadId].update(uploadRecord)
+    ]);
+
+    // Create csv_records linked to this upload
+    const recordTransactions = parsedRows.map((row) => {
       const recordId = id();
-      // Only use fields that exist in schema: telegramAccount, createdAt, oldUsername, newUsername
-      const newRecord = {
+      return db.tx.csv_records[recordId].update({
         oldUsername: row.oldUsername,
         newUsername: row.newUsername,
+        npubKey: row.npubKey,
         createdAt: now,
-        telegramAccount: '', // Required by schema
-      };
+        uploadId: uploadId,
+        uploadedBy: adminEmail,
+      });
+    });
 
-      await db.transact([
-        db.tx.csv_records[recordId].create(newRecord)
-      ]);
-    }
+    await db.transact(recordTransactions);
 
     return NextResponse.json({
       message: `CSV uploaded successfully. ${parsedRows.length} rows processed.`,
       rowCount: parsedRows.length,
+      uploadId: uploadId,
+      uploadName: uploadRecord.uploadName,
     });
 
   } catch (error) {

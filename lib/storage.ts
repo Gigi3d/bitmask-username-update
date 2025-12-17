@@ -157,20 +157,24 @@ export async function addUserUpdate(updateData: UserUpdateData): Promise<{ succe
     const recordId = id();
     const now = Date.now();
 
+    // Build record with required fields
+    const record: Record<string, string | number> = {
+      oldUsername: updateData.oldUsername,
+      newUsername: updateData.newUsername,
+      submittedAt: updateData.submittedAt || now,
+      updateAttemptCount: updateData.updateAttemptCount,
+      lastUpdatedAt: updateData.lastUpdatedAt || now,
+    };
+
+    // Only add optional fields if they exist (avoid null, use undefined)
+    if (updateData.npubKey) record.npubKey = updateData.npubKey;
+    if (updateData.trackingId) record.trackingId = updateData.trackingId;
+    if (updateData.firstNewUsername) record.firstNewUsername = updateData.firstNewUsername;
+    if (updateData.secondNewUsername) record.secondNewUsername = updateData.secondNewUsername;
+    if (updateData.thirdNewUsername) record.thirdNewUsername = updateData.thirdNewUsername;
+
     await db.transact([
-      db.tx.user_updates[recordId].create({
-        oldUsername: updateData.oldUsername,
-        newUsername: updateData.newUsername,
-        npubKey: updateData.npubKey || null,
-        trackingId: updateData.trackingId || null,
-        submittedAt: updateData.submittedAt || now,
-        // 3-Attempt tracking fields
-        updateAttemptCount: updateData.updateAttemptCount,
-        firstNewUsername: updateData.firstNewUsername || null,
-        secondNewUsername: updateData.secondNewUsername || null,
-        thirdNewUsername: updateData.thirdNewUsername || null,
-        lastUpdatedAt: updateData.lastUpdatedAt || now,
-      })
+      db.tx.user_updates[recordId].create(record)
     ]);
 
     return { success: true };

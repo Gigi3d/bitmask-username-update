@@ -46,6 +46,15 @@ const AllUpdatedRecords = dynamic(() => import('@/components/AllUpdatedRecords')
   ),
 });
 
+const CSVViewer = dynamic(() => import('@/components/CSVViewer'), {
+  loading: () => (
+    <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
+      <div className="h-8 w-32 bg-gray-800 rounded animate-pulse mb-4"></div>
+      <div className="h-96 bg-gray-800 rounded animate-pulse"></div>
+    </div>
+  ),
+});
+
 // Lazy load Analytics component with recharts (heavy library)
 const Analytics = dynamic(() => import('@/components/Analytics'), {
   loading: () => (
@@ -184,6 +193,10 @@ export default function AdminDashboard() {
 
           <ErrorBoundary componentName="CSV upload">
             <CSVUpload />
+          </ErrorBoundary>
+
+          <ErrorBoundary componentName="CSV viewer">
+            <CSVViewer />
           </ErrorBoundary>
 
           <ErrorBoundary componentName="analytics">
