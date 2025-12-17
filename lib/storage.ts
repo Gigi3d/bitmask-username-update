@@ -37,8 +37,8 @@ export async function getCSVData(includeAll: boolean = true, adminEmail?: string
     const csvMap = new Map<string, CSVRow>();
 
     for (const record of records) {
-      // Type guard: ensure required fields exist
-      if (!record.oldUsername) {
+      // Skip records that have neither oldUsername nor npubKey
+      if (!record.oldUsername && !record.npubKey) {
         continue;
       }
 
@@ -54,12 +54,16 @@ export async function getCSVData(includeAll: boolean = true, adminEmail?: string
       const newUsername = typeof record.newUsername === 'string' ? record.newUsername : '';
       const npubKey = typeof record.npubKey === 'string' ? record.npubKey : undefined;
 
-      // Use oldUsername as the map key
-      csvMap.set(oldUsername.toLowerCase(), {
-        oldUsername,
-        newUsername,
-        npubKey,
-      });
+      // Use a composite key: prefer oldUsername, fallback to npubKey
+      const mapKey = oldUsername ? oldUsername.toLowerCase() : (npubKey ? npubKey.toLowerCase() : '');
+
+      if (mapKey) {
+        csvMap.set(mapKey, {
+          oldUsername,
+          newUsername,
+          npubKey,
+        });
+      }
     }
 
     return csvMap;
