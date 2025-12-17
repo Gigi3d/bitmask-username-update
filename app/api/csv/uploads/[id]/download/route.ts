@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic';
  */
 export async function GET(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         // Check admin authentication
@@ -19,7 +19,7 @@ export async function GET(
             return authCheck.response;
         }
 
-        const uploadId = params.id;
+        const { id: uploadId } = await params;
         const db = getAdminDb();
 
         // Fetch the upload metadata
