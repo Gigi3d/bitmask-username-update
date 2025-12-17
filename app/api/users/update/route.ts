@@ -98,11 +98,7 @@ export async function POST(request: NextRequest) {
       return createValidationError('Identifier does not match records');
     }
 
-    // Validate new username matches CSV data (only if CSV has a newUsername value)
-    // If CSV newUsername is empty, allow any newUsername from user
-    if (csvRow.newUsername && csvRow.newUsername.trim() !== '' && csvRow.newUsername !== newUsername) {
-      return createValidationError('New username does not match expected value from records');
-    }
+    // Allow any new username - no validation against CSV data
 
     // Get existing attempts to populate the correct field
     const attempts = await getUserUpdateAttempts(oldUsername);
