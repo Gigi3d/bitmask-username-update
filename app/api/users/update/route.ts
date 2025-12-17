@@ -66,39 +66,41 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get CSV data to validate against (use flexible matching)
+    // Get CSV data to validate against
     const csvData = await getCSVData();
-    const normalizedOldUsername = normalizeBitmaskUsername(oldUsername);
 
-    // Find matching record using flexible username matching
+    // Find matching record by searching BOTH oldUsername AND npubKey
     let csvRow = null;
+
     for (const row of csvData.values()) {
-      if (normalizeBitmaskUsername(row.oldUsername) === normalizedOldUsername) {
+      let isMatch = false;
+
+      // Check if npubKey matches (if provided)
+      if (npubKey && row.npubKey && row.npubKey.toLowerCase().trim() === npubKey.toLowerCase().trim()) {
+        isMatch = true;
+      }
+
+      // Check if oldUsername matches (if not already matched and if oldUsername exists)
+      if (!isMatch && oldUsername && row.oldUsername) {
+        const normalizedInput = normalizeBitmaskUsername(oldUsername);
+        const normalizedRow = normalizeBitmaskUsername(row.oldUsername);
+        if (normalizedRow === normalizedInput) {
+          isMatch = true;
+        }
+      }
+
+      if (isMatch) {
         csvRow = row;
         break;
       }
     }
 
     if (!csvRow) {
-      return createNotFoundError('Old username not found in campaign records');
+      return createNotFoundError('Identifier not found in campaign records. Please verify you entered the correct username or nPUB key from Step 1.');
     }
 
-    // Validate old username OR nPUB key matches CSV data
-    let identifierMatches = false;
-
-    if (npubKey && csvRow.npubKey) {
-      // If nPUB key is provided and exists in CSV, validate it
-      identifierMatches = csvRow.npubKey === npubKey;
-    } else {
-      // Otherwise, validate old username
-      identifierMatches = csvRow.oldUsername.toLowerCase() === oldUsername.toLowerCase();
-    }
-
-    if (!identifierMatches) {
-      return createValidationError('Identifier does not match records');
-    }
-
-    // Allow any new username - no validation against CSV data
+    // Record found - no additional validation needed
+    // User can update to any new username
 
     // Get existing attempts to populate the correct field
     const attempts = await getUserUpdateAttempts(oldUsername);
