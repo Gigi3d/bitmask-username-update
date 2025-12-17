@@ -35,7 +35,7 @@ const _schema = i.schema({
       uploadedBy: i.string().optional(), // Email of the admin who uploaded the CSV (optional for backward compatibility)
     }),
     user_updates: i.entity({
-      oldUsername: i.string(),
+      oldUsername: i.string().optional(), // Optional - may be empty for npubKey-only users
       newUsername: i.string(), // Current/latest username
       npubKey: i.string().optional(), // nPUB key as alternative identifier
       submittedAt: i.number(),

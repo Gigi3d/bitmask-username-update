@@ -11,6 +11,9 @@
  */
 
 import { init } from '@instantdb/admin';
+import * as dotenv from 'dotenv';
+
+dotenv.config({ path: '.env.local' });
 
 async function syncSchema() {
     console.log('🔄 Syncing schema with InstantDB...\n');
