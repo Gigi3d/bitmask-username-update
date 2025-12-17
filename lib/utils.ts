@@ -210,15 +210,16 @@ export function parseCSV(csvContent: string): Array<{
         let newUsername = values[newUsernameIndex] || '';
         const npubKey = npubKeyIndex !== -1 ? values[npubKeyIndex] : undefined;
 
-        // Skip rows where oldUsername is empty (required field)
-        if (!oldUsername) {
+        // Skip rows where BOTH oldUsername AND npubKey are empty
+        // At least one identifier is required
+        if (!oldUsername && !npubKey) {
             skippedMissingOldUsername++;
             continue;
         }
 
-        // If newUsername is empty, use oldUsername as newUsername
+        // If newUsername is empty, use oldUsername as newUsername (or empty if no oldUsername)
         if (!newUsername) {
-            newUsername = oldUsername;
+            newUsername = oldUsername || '';
         }
 
         // Add row
@@ -234,7 +235,7 @@ export function parseCSV(csvContent: string): Array<{
     console.log(`  Header lines: 1`);
     console.log(`  Data lines: ${lines.length - 1}`);
     console.log(`  Empty lines skipped: ${skippedEmptyLines}`);
-    console.log(`  Missing oldUsername skipped: ${skippedMissingOldUsername}`);
+    console.log(`  Missing both oldUsername and npubKey: ${skippedMissingOldUsername}`);
     console.log(`  Valid rows parsed: ${rows.length}`);
 
     return rows;
