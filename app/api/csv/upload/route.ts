@@ -5,6 +5,8 @@ import { getAdminDb } from '@/lib/instantdb';
 import { id } from '@instantdb/admin';
 
 export const dynamic = 'force-dynamic';
+export const maxDuration = 60; // Allow up to 60 seconds for large CSV uploads
+
 
 export async function POST(request: NextRequest) {
   try {
@@ -71,20 +73,30 @@ export async function POST(request: NextRequest) {
       db.tx.csv_uploads[uploadId].update(uploadRecord)
     ]);
 
-    // Create csv_records linked to this upload
-    const recordTransactions = parsedRows.map((row) => {
-      const recordId = id();
-      return db.tx.csv_records[recordId].update({
-        oldUsername: row.oldUsername,
-        newUsername: row.newUsername,
-        npubKey: row.npubKey,
-        createdAt: now,
-        uploadId: uploadId,
-        uploadedBy: adminEmail,
-      });
-    });
+    // Process records in batches to handle large files
+    const BATCH_SIZE = 500; // Process 500 records at a time
+    let processedCount = 0;
 
-    await db.transact(recordTransactions);
+    for (let i = 0; i < parsedRows.length; i += BATCH_SIZE) {
+      const batch = parsedRows.slice(i, i + BATCH_SIZE);
+
+      const batchTransactions = batch.map((row) => {
+        const recordId = id();
+        return db.tx.csv_records[recordId].update({
+          oldUsername: row.oldUsername,
+          newUsername: row.newUsername,
+          npubKey: row.npubKey,
+          createdAt: now,
+          uploadId: uploadId,
+          uploadedBy: adminEmail,
+        });
+      });
+
+      await db.transact(batchTransactions);
+      processedCount += batch.length;
+
+      console.log(`Processed ${processedCount}/${parsedRows.length} records`);
+    }
 
     return NextResponse.json({
       message: `CSV uploaded successfully. ${parsedRows.length} rows processed.`,
