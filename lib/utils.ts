@@ -207,13 +207,18 @@ export function parseCSV(csvContent: string): Array<{
 
         // Get values from columns
         const oldUsername = values[oldUsernameIndex] || '';
-        const newUsername = values[newUsernameIndex] || '';
+        let newUsername = values[newUsernameIndex] || '';
         const npubKey = npubKeyIndex !== -1 ? values[npubKeyIndex] : undefined;
 
         // Skip rows where oldUsername is empty (required field)
         if (!oldUsername) {
             skippedMissingOldUsername++;
             continue;
+        }
+
+        // If newUsername is empty, use oldUsername as newUsername
+        if (!newUsername) {
+            newUsername = oldUsername;
         }
 
         // Add row
