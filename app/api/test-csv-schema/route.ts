@@ -1,33 +1,66 @@
 import { NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/instantdb';
+import { id } from '@instantdb/admin';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
     try {
         const db = getAdminDb();
-        const result = await db.query({ csv_records: {} });
 
-        const records = result?.csv_records
-            ? (Array.isArray(result.csv_records)
-                ? result.csv_records
-                : Object.values(result.csv_records))
-            : [];
+        // Try to create a test csv_uploads record
+        const testUploadId = id();
+        const testUpload = {
+            uploadName: 'TEST',
+            fileName: 'test.csv',
+            uploadedBy: 'test@example.com',
+            uploadedAt: Date.now(),
+            recordCount: 1,
+        };
 
-        const sampleRecord = records[0] || null;
-        const allFields = sampleRecord ? Object.keys(sampleRecord) : [];
+        console.log('Testing csv_uploads creation...');
+        await db.transact([
+            db.tx.csv_uploads[testUploadId].update(testUpload)
+        ]);
+        console.log('✅ csv_uploads works!');
+
+        // Try to create a test csv_records record
+        const testRecordId = id();
+        const testRecord = {
+            oldUsername: 'test@old.com',
+            newUsername: 'test@new.com',
+            npubKey: 'npub123',
+            createdAt: Date.now(),
+            uploadId: testUploadId,
+            uploadedBy: 'test@example.com',
+        };
+
+        console.log('Testing csv_records creation...');
+        await db.transact([
+            db.tx.csv_records[testRecordId].update(testRecord)
+        ]);
+        console.log('✅ csv_records works!');
+
+        // Clean up test data
+        await db.transact([
+            db.tx.csv_uploads[testUploadId].delete(),
+            db.tx.csv_records[testRecordId].delete(),
+        ]);
 
         return NextResponse.json({
             success: true,
-            totalRecords: records.length,
-            sampleRecord,
-            allFields,
-            message: 'Use these fields in your CSV upload code',
+            message: 'Schema test passed! Both entities work correctly.',
         });
-    } catch (error) {
+
+    } catch (error: any) {
+        console.error('Schema test error:', error);
+
         return NextResponse.json({
             success: false,
-            error: error instanceof Error ? error.message : 'Unknown error',
+            error: error.message,
+            hint: error.hint || null,
+            body: error.body || null,
+            details: 'Check which entity/attribute is causing the issue',
         }, { status: 500 });
     }
 }
