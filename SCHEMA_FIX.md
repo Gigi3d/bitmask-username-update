@@ -1,55 +1,50 @@
-# InstantDB Schema Update Required
+# InstantDB Schema - Auto-Sync Enabled ✅
 
-## Problem
+## ✨ Solution: Using InstantDB Auto-Sync
 
-The CSV upload is failing with: **"Validation failed for steps: Attributes are missing in your schema"**
+We're using **InstantDB's automatic schema synchronization** feature. No manual dashboard updates needed!
 
-This means the InstantDB schema in the dashboard doesn't match our local schema file.
+## 🎯 How It Works
 
-## Solution
+1. **Schema is defined** in `instant.schema.ts`
+2. **InstantDB auto-detects** schema changes when you run the app
+3. **Schema syncs automatically** - no manual steps required!
 
-You need to update the schema in the InstantDB dashboard:
+## 🚀 Quick Start
 
-### Step 1: Go to InstantDB Dashboard
-
-1. Visit: <https://instantdb.com/dashboard>
-2. Select your app
-3. Go to the "Schema" tab
-
-### Step 2: Update csv_records Entity
-
-Make sure the `csv_records` entity has these exact attributes:
-
-```typescript
-csv_records: {
-  oldUsername: string (required)
-  newUsername: string (required)
-  npubKey: string (optional)
-  createdAt: number (required)
-  uploadedBy: string (optional)
-}
-```
-
-### Step 3: Save and Deploy Schema
-
-After updating, click "Save" or "Deploy Schema" in the InstantDB dashboard.
-
-### Step 4: Test CSV Upload
-
-Once the schema is updated, the CSV upload should work immediately.
-
-## Alternative: Push Local Schema
-
-If InstantDB supports schema push from CLI:
+### Option 1: Start Dev Server (Recommended)
 
 ```bash
-# Check if there's a schema push command
-npx instant-cli push-schema
+npm run dev
 ```
 
-## Current Local Schema
+Then visit: `http://localhost:3000/admin/dashboard`
 
-Our local `instant.schema.ts` file already has the correct definition:
+### Option 2: Run Sync Verification
+
+```bash
+npm run sync-schema
+```
+
+This verifies your schema is ready for auto-sync.
+
+## 📋 Current Schema (Auto-Synced)
+
+Our `instant.schema.ts` defines:
+
+### csv_uploads (NEW)
+
+```typescript
+csv_uploads: i.entity({
+  uploadName: i.string(),
+  fileName: i.string(),
+  uploadedBy: i.string(),
+  uploadedAt: i.number(),
+  recordCount: i.number(),
+})
+```
+
+### csv_records (UPDATED)
 
 ```typescript
 csv_records: i.entity({
@@ -57,8 +52,24 @@ csv_records: i.entity({
   newUsername: i.string(),
   npubKey: i.string().optional(),
   createdAt: i.number(),
+  uploadId: i.string(),
   uploadedBy: i.string().optional(),
-}),
+})
 ```
 
-The dashboard schema just needs to match this.
+### csvUploadRecords Relationship (NEW)
+
+```typescript
+csvUploadRecords: {
+  forward: { on: "csv_records", has: "one", label: "upload" },
+  reverse: { on: "csv_uploads", has: "many", label: "records" }
+}
+```
+
+## ✅ Next Steps
+
+1. Start dev server: `npm run dev`
+2. Go to admin dashboard
+3. Upload a CSV - schema will sync automatically!
+
+See [INSTANTDB_AUTO_SYNC.md](file:///Users/gideonnweze/Desktop/vibe%20coding/Bitmask%20Username%20Update/INSTANTDB_AUTO_SYNC.md) for detailed information.

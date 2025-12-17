@@ -11,7 +11,8 @@
     "analyze": "ANALYZE=true next build",
     "add-root-admin": "dotenv -e .env.local -- tsx scripts/add-root-admin.ts",
     "setup-schema": "export $(cat .env.local | xargs) && npx tsx scripts/check-and-fix-schema.ts",
-    "check-schema": "export $(cat .env.local | xargs) && npx tsx scripts/check-and-fix-schema.ts"
+    "check-schema": "export $(cat .env.local | xargs) && npx tsx scripts/check-and-fix-schema.ts",
+    "sync-schema": "export $(cat .env.local | xargs) && npx tsx scripts/push-schema.ts"
   },
   "dependencies": {
     "@instantdb/admin": "^0.22.51",
