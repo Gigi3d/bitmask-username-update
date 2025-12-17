@@ -41,6 +41,7 @@ export default function CSVViewer() {
     const [error, setError] = useState('');
     const [editingUploadId, setEditingUploadId] = useState<string | null>(null);
     const [editingName, setEditingName] = useState('');
+    const [downloadingUploadId, setDownloadingUploadId] = useState<string | null>(null);
 
     // Fetch all uploads
     const fetchUploads = useCallback(async () => {
@@ -174,6 +175,41 @@ export default function CSVViewer() {
         }
     }, [editingName, renameUpload, cancelEditing]);
 
+    // Download CSV
+    const downloadCSV = useCallback(async (uploadId: string, uploadName: string) => {
+        if (!user?.email) return;
+
+        setDownloadingUploadId(uploadId);
+        setError('');
+
+        try {
+            const response = await fetch(`/api/csv/uploads/${uploadId}/download`, {
+                headers: {
+                    'x-user-email': user.email,
+                },
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to download CSV');
+            }
+
+            // Get the blob and trigger download
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${uploadName.replace(/[^a-z0-9_-]/gi, '_')}_${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to download CSV');
+        } finally {
+            setDownloadingUploadId(null);
+        }
+    }, [user]);
+
     // Format date
     const formatDate = (timestamp: number) => {
         return new Date(timestamp).toLocaleString('en-US', {
@@ -278,6 +314,24 @@ export default function CSVViewer() {
                                             </div>
                                         )}
                                     </div>
+
+                                    <button
+                                        onClick={() => downloadCSV(upload.id, upload.uploadName)}
+                                        disabled={downloadingUploadId === upload.id}
+                                        className="px-4 py-2 bg-accent text-black font-semibold rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity text-sm flex items-center gap-2"
+                                        title="Download CSV"
+                                    >
+                                        {downloadingUploadId === upload.id ? (
+                                            <>
+                                                <span className="animate-spin">⏳</span>
+                                                Downloading...
+                                            </>
+                                        ) : (
+                                            <>
+                                                📥 Download CSV
+                                            </>
+                                        )}
+                                    </button>
                                 </div>
                             </div>
 
